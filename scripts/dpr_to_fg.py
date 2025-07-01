@@ -100,6 +100,6 @@ export_csv.to_csv(
 )
 #%% [markdown]
 #### Upload the file
-#Once the file has been generated, please open [QuickStatements](https://database.factgrid.de/quickstatements/#/batch) and **run the CSV-commands**. More details to perform this can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/docs/Run_factgrid_csv.md).
+#Once the file has been generated, please open [QuickStatements](https://database.factgrid.de/quickstatements/#/batch) and **run the CSV-commands**. More details to perform this can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_factgrid_csv.md).
 #### Next notebook
 #There is no next notebook. The workflow is complete.

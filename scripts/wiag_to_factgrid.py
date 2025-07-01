@@ -1052,6 +1052,6 @@ with open(filepath, 'w') as file:
 
 #%% [markdown]
 #### Updating FactGrid
-#Once the files have been generated, please open [QuickStatements](https://database.factgrid.de/quickstatements/#/batch) and **run the CSV-commands/V1-commands** (the qs-file contains V1 commands, the csv-files CSV-commands). More details to perform this can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/docs/Run_factgrid_csv.md).
+#Once the files have been generated, please open [QuickStatements](https://database.factgrid.de/quickstatements/#/batch) and **run the CSV-commands/V1-commands** (the qs-file contains V1 commands, the csv-files CSV-commands). More details to perform this can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_factgrid_csv.md).
 #### Next notebook
 #Once the update is done, you can continue with [notebook 5](fg_to_dpr.ipynb) (fg_to_dpr).

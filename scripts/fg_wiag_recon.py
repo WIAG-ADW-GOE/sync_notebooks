@@ -101,14 +101,14 @@ fg_missing_wiag_id[['wiag_id', 'wiag_fg_id']]
 #%% [markdown]
 ### 4. Find entries to update
 #### Check all WIAG-IDs that FactGrid-entries link to
-#In case your repository (WIAGweb2) folder is **not** located under the path `path_to_repository`, change the variable below to where the folder is located.
+#In case your repository (sync_notebooks) folder is **not** located under the path `path_to_repository`, change the variable below to where the folder is located.
 #%%
 path_to_repository = r"C:\Users\Public"
 #%% [markdown]
 #Please note, that the code cell below can take **up to 10 minutes.** Should the cell fail, try running it again (likely cause is a timeout).
 #The cell automatically checks for entries to update by checking WIAG-IDs that are referenced in FactGrid.
 #%%
-path_to_function_scripts = path_to_repository + r"\WIAGweb2\notebooks\sync_notebooks\scripts\factgrid_recon_function_definitions.py"
+path_to_function_scripts = path_to_repository + r"\sync_notebooks\scripts\factgrid_recon_function_definitions.py"
 #This runs the python script located under the given path to define two needed functions (one is the main function called below).
 %run $path_to_function_scripts
 
@@ -191,7 +191,7 @@ final_fg_qs_csv.to_csv( # generate csv file
 #%% [markdown]
 #### Upload the file
 #
-#The generated Factgrid file can be uploaded on to quick statements [here](https://database.factgrid.de/quickstatements/#/batch). More details to perform this [can be found here](https://github.com/WIAG-ADW-GOE/sync_notebooks/docs/Run_factgrid_csv.md)
+#The generated Factgrid file can be uploaded on to quick statements [here](https://database.factgrid.de/quickstatements/#/batch). More details to perform this [can be found here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_factgrid_csv.md)
 #
 #%% [markdown]
 ### 6. Retrieve updated online data
@@ -279,6 +279,6 @@ with open(os.path.join(output_path, f'insert-uext-can_{today_string}.sql'), 'w')
     file.write(query)
 #%% [markdown]
 #### Upload file
-#Now that the file has been generated, you need to upload the file to the WIAG database. As always go to [phpMyAdmin (WIAG)](https://vwebfile.gwdg.de/phpmyadmin/), then first select the database (wiagvokabulare) and then either go to the `Import` tab and choose the file to run or paste the contents of the SQL-file into the textfield (more details here [Run_SQL_Query_and_Export_CSV.md](https://github.com/WIAG-ADW-GOE/sync_notebooks/docs/Run_SQL_Query_and_Export_CSV.md)).
+#Now that the file has been generated, you need to upload the file to the WIAG database. As always go to [phpMyAdmin (WIAG)](https://vwebfile.gwdg.de/phpmyadmin/), then first select the database (wiagvokabulare) and then either go to the `Import` tab and choose the file to run or paste the contents of the SQL-file into the textfield (more details here [Run_SQL_Query_and_Export_CSV.md](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_SQL_Query_and_Export_CSV.md)).
 #### Next notebook
 #Once the update is done, you can continue with [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create).
