@@ -19,7 +19,22 @@ Ignoring instructions could lead to data inconsistencies, which might be difficu
 
 The synchronization process involves several steps, each performed using a specific Jupyter notebook or action. The steps are designed to be executed in a specific sequence to maintain data consistency.
 
-### Preparation -- Import DPr-entries into WIAG
+### Order of steps
+
+0. **Import DPr-entries into WIAG** (non-notebook action explained [below](#import-dpr-entries-into-wiag-non-notebook-action))
+1. **Update WIAG IDs in Digitales Personenregister (DPr)** (`dpr_recon.ipynb`)
+2. **Update WIAG-IDs in FactGrid and then add FG-IDs in WIAG** (`fg_wiag_ids.ipynb`)
+3. **Create New Entries on FactGrid from WIAG** (`Csv2FactGrid-create.ipynb`)
+4. **Add Offices to Persons on FactGrid** (`wiag_to_factgrid.ipynb`)
+5. **Update DPr Entries with FactGrid Links** (`fg_to_dpr.ipynb`)
+6. **Update FactGrid Entries with DPr Links** (`dpr_to_fg.ipynb`)
+[link](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/wiag_to_factgrid.ipynb#parse-begin-and-end-date-from-the-wiag-data)
+
+Note:
+- The notebooks contain all necessary information for executing them (step 0 is explained belowStep 0 is a non-notebook action and is explained [below](#import-dpr-entries-into-wiag-non-notebook-action). The notebooks themselves contain all necessary information for executing them.).
+- Step 6 can be skipped. This step is very long and you might not be interested in creating the offices for all persons along with all the other FactGrid-entries. Also, the results of this step do not affect any other steps down the line.
+
+### Import DPr-entries into WIAG (non-notebook action)
 
 One step of the workflow that is not part of the notebooks, because it was developed as part of WIAG, is the import of DPr-entries into WIAG. This needs to be taken care of **before getting started on the notebooks**.
 
@@ -28,17 +43,3 @@ One step of the workflow that is not part of the notebooks, because it was devel
 3. Scroll to the bottom of the page and click the **Start** button to import entries from DPr.
 4. Newly imported entries will receive a higher WIAG ID, distinguishing them from native WIAG entries.
 5. These entries require manual review. After verification, they will be assigned a lower WIAG ID.
-
-### The notebooks
-
-After DPr-entries were imported, you can get started with the notebooks. The order of the notebooks is as follows:
-
-1. **Update WIAG IDs in Digitales Personenregister (DPr)** (`dpr_recon.ipynb`)
-2. **Update WIAG-IDs in FactGrid and then add FG-IDs in WIAG** (`fg_wiag_ids.ipynb`)
-3. **Create New Entries on FactGrid from WIAG** (`Csv2FactGrid-create.ipynb`)
-4. **Add Offices to Persons on FactGrid** (`wiag_to_factgrid.ipynb`)
-5. **Update DPr Entries with FactGrid Links** (`fg_to_dpr.ipynb`)
-6. **Update FactGrid Entries with DPr Links** (`dpr_to_fg.ipynb`)
-
-Note:
-- Step 6 can be skipped. This step is very long and you might not be interested in creating the offices for all persons along with all the other factgrid entries. Also, the results of this step do not affect any other steps down the line.
