@@ -2,19 +2,19 @@
 ## 4. wiag_to_factgrid.ipynb
 # 
 ### Office Creation Notebook
-#This notebook takes data from wiag as the primary source, then joins it with
-#* institution data from factgrid
-#* diocese data from factgrid
+#This notebook takes data from WIAG as the primary source, then joins it with
+#* institution data from FactGrid
+#* diocese data from FactGrid
 #* role data from wiag
-#* role data from factgrid
+#* role data from FactGrid
 # 
 #and then creates a final quickstatements csv at the end to be uploaded to FactGrid.
 # 
-#At every join operation, there is the possibility that some data in wiag has no corresponding data in factgrid.
+#At every join operation, there is the possibility that some data in WIAG has no corresponding data in factgrid.
 #The notebook create a quickstatements csv to create the missing data whenever this happens.
 #After creating the csv, it removes all the missing entries and moves on the next step (these cells are marked with two stars **). There are two possible routes to execute this notebook:
 #1. [Import the csv files to factgrid](https://database.factgrid.de/quickstatements/#/batch) whenever one is generated, and then run the notebook from the beginning up to that point. 
-#2. Do not create any factgrid entries except at the very last step. This flow works since all missing entries are ignored after their corresponding csv file is generated.
+#2. Do not create any FactGrid-entries except at the very last step. This flow works since all missing entries are ignored after their corresponding csv file is generated.
 # 
 #This is explained with the diagram below. The description of the shapes is below:
 #* Diamonds: The diamonds indicate a join operation. After this operation you have entries that have been successfully added information to.
@@ -55,7 +55,7 @@ today_string = datetime.now().strftime('%Y-%m-%d')
 
 #%% [markdown]
 ### 2. Download data from WIAG
-#### Export data from WIAG database
+#### Export data via phpMyAdmin
 #For this step you have to manually export the datasets by following the steps. In case the text description is not enough, a description with screenshots can be found [here](docs/Run_SQL_Query_and_Export_CSV.md).
 #
 #1. open [phpMyAdmin WIAG](https://vwebfile.gwdg.de/phpmyadmin/)
@@ -74,7 +74,7 @@ wiag_roles_df = pl.read_csv(input_path_file, null_values='NULL', columns = [0, 2
 len(wiag_roles_df)
 
 #%% [markdown]
-#### Download data from WIAG
+#### Export data via the website
 #https://wiag-vokabulare.uni-goettingen.de/query/can
 # 
 #It's recommended to limit the export to one Domstift by first searching for that Domstift before exporting the 'CSV Amtsdaten' to make sure that the amount of roles to be added is manageable.
@@ -112,9 +112,9 @@ assert last_modified.day == now.day and last_modified.month == now.month, f'The 
 #* (not recommended) continue if you are sure that you need to use old data. This is something that the developer might want to do.
 
 #%% [markdown]
-### 3. Download data from factgrid
+### 3. Download data from FactGrid
 # 
-#Troubleshooting: If any of the following requests to factgrid fail, try rerunning the cells.
+#Troubleshooting: If any of the following requests to FactGrid fail, try rerunning the cells.
 
 #%% [markdown]
 #The following cell looks up institutions with an entry in the 'Klosterdatenbank' and gets their id.
@@ -136,9 +136,6 @@ factgrid_institution_df = pl.json_normalize(data['results']['bindings'])
 factgrid_institution_df = factgrid_institution_df.cast({'gsn.value':pl.UInt32})
 
 len(factgrid_institution_df)
-
-#%% [markdown]
-#The following cell looks up
 
 #%%
 url = 'https://database.factgrid.de/sparql'
@@ -226,7 +223,7 @@ if not duplicate_fg_entries.is_empty():
 #%% [markdown]
 ##### Troubleshooting: possible institution duplicates
 #This can be caused by a simple human error on factgrid. 
-#The best solution is to use the factgrid ids printed above and resolve the duplicates.
+#The best solution is to use the FactGrid-IDs printed above and resolve the duplicates.
 # 
 #In case you want to ignore the duplicates, uncomment the code below by removing the leading '# ' (keyboard shortcut 'ctrl + /') and run it.
 
@@ -234,7 +231,7 @@ if not duplicate_fg_entries.is_empty():
 #factgrid_institution_df = factgrid_institution_df.filter(pl.col('fg_gsn_id').is_in(duplicate_fg_entries.select('fg_gsn_id').not_()))
 
 #%% [markdown]
-### 4. Join person role data from WIAG with institution and diocese data from Factgrid
+### 4. Join the data
 
 #%% [markdown]
 #First the WIAG "Amtsdaten" for Domherren export is joined with institution data from FactGrid
@@ -271,9 +268,10 @@ for row in role_inst_df.iter_rows(named = True):
 role_inst_dioc_df = role_inst_df.join(pl.DataFrame(rows), how = 'left', left_on = 'id', right_on = 'role_all-id')
 
 #%% [markdown]
-### 5. Check for special cases
+### 5. Missing institutions
 
 #%% [markdown]
+#### Check for special cases
 #These lists below allow the code below to identify if the role is missing an institution or if the role doesn't require one at all.
 # 
 #* The `unbound_role_groups` list contains the role_groups that are not bound to a place at all.
@@ -299,7 +297,7 @@ diocese_role_group_exception_roles = [
 ]
 
 #%%
-#select all entries that should contain an institution on factgrid but don't have it after the join operation
+#select all entries that should contain an institution on FactGrid but don't have it after the join operation
 missing_inst_df = role_inst_dioc_df.filter(
     pl.col('fg_institution_id').is_null() &
     pl.col('role_group').is_in(unbound_role_groups).not_() &
@@ -307,7 +305,7 @@ missing_inst_df = role_inst_dioc_df.filter(
 )
 print(str(missing_inst_df.height) + " entries with missing institution id in FG")
 
-#select all entries that should contain a diocese on factgrid but don't have it after the join operation
+#select all entries that should contain a diocese on FactGrid but don't have it after the join operation
 missing_dioc_df = role_inst_dioc_df.filter(
     pl.col('fg_diocese_id').is_null() & 
     pl.col('role_group').is_in(unbound_role_groups).not_() & 
@@ -317,7 +315,7 @@ missing_dioc_df = role_inst_dioc_df.filter(
 print(str(missing_dioc_df.height) + " entries with missing diocese id in FG")
 
 #%% [markdown]
-#### Check for new roles (roles that so far have not been handled by this notebook)
+##### Check for new roles (roles that so far have not been handled by this notebook)
 #Any roles showing up here need to be added to either the `diocese_role_group_exception_roles` list if they don't need a diocese entry in FactGrid or to the `roles_that_need_a_diocese` list (defined below) if they do need a diocese entry. If you added a name to the `diocese_role_group_exception_roles` list, rerun the cells from the start of step 5 to make sure the change is propagated.
 
 #%%
@@ -325,34 +323,32 @@ roles_that_need_a_diocese = ['Bischof', 'Koadjutor', 'Erzbischof']
 missing_dioc_df.filter(pl.col('name').is_in(roles_that_need_a_diocese).not_())
 
 #%% [markdown]
-#### Check entries that have no role group in wiag
+##### Check entries that have no role group in wiag
 
 #%%
 missing_inst_df.filter(pl.col('role_group').is_null())
 
 #%% [markdown]
-#### Check for entries that are missing an id required for the join
+##### Check for entries that are missing an id required for the join
 #Please **manually inspect all the entries** that are shown by the code cells below
 
 #%% [markdown]
-##### Entries that have a missing institution id in WIAG
+#Entries that have a missing institution id in WIAG
 
 #%%
 missing_inst_df.filter(pl.col('institution_id').is_null())
 
 #%% [markdown]
-##### Entries that have a missing diocese id in WIAG
+#Entries that have a missing diocese id in WIAG
 
 #%%
 missing_dioc_df.filter(pl.col('diocese_id').is_null())
 
 #%% [markdown]
-### Create the missing institutions on factgrid here
-
-#%% [markdown]
-#Creates a file with the name institution_creation_\<date\>.csv
-# 
-#**You need to fill in the empty columns of the file** (except qid) and then use the file on quickstatements.
+#### Generate missing institutions file
+#
+#Creates a file with the name create-missing-institutions_\<date\>.csv
+#**You need to fill in the empty columns of the file** (except qid) and then use the file on quickstatements. As mentioned above, you can either do this right away or at the end.
 
 #%%
 create_institution_factgrid_df = missing_inst_df.filter(pl.col('institution_id').is_not_null()).rename({'institution' : 'Lde', 'institution_id' : 'P471'}).unique(subset = pl.col('P471')).with_columns(
@@ -365,10 +361,13 @@ create_institution_factgrid_df = missing_inst_df.filter(pl.col('institution_id')
     P131 = pl.lit('Q153178')
 ).select(['qid', 'Lde', 'Len',	'Lfr',	'Les',	'P471',	'Dde',	'Den',	'P131'])
 
-create_institution_factgrid_df.write_csv(file = os.path.join(output_path, f'institution_creation_{today_string}.csv'), separator = ';')
+create_institution_factgrid_df.write_csv(file = os.path.join(output_path, f'create-missing-institutions_{today_string}.csv'), separator = ';')
 
 create_institution_factgrid_df.sample(n = 5)
 
+#%% [markdown]
+### 6. Missing roles
+#These roles do not include the institution information. In other words, this step adds roles to FactGrid like 'archbishop' and not 'archbishop of trier'
 #%% [markdown]
 #### Remove all missing (institution and diocese) entries **
 
@@ -380,12 +379,7 @@ dioc_joined_df = role_inst_dioc_df.remove(pl.col("id").is_in(all_missing_entries
 print("From originally " + str(role_inst_dioc_df.height) + " rows, " + str(dioc_joined_df.height) + " rows, that are not missing an institution or diocese, are left.")
 
 #%% [markdown]
-### Add role factgrid id
-#Note: This role does not include the institution information. ie, it adds factgrid ids for roles like 'archbishop' and not 'archbishop of trier'
-# 
-#The part of the script below could be used to create quickstatements for career statements.
-
-#%% [markdown]
+#### Check for special cases
 ##### Check for roles with multiple entries in FactGrid
 #Should the cell below print anything, these entries need to be **handled manually**, because they contain more than one entry on FactGrid. You can continue with the rest of the notebook even without taking care of these, because these entries will simply be ignored.
 
@@ -393,7 +387,7 @@ print("From originally " + str(role_inst_dioc_df.height) + " rows, " + str(dioc_
 wiag_roles_df.filter(pl.col("name").is_duplicated())
 
 #%% [markdown]
-#### Check for missing roles in WIAG role table
+##### Check for missing roles in WIAG role table
 
 #%%
 missing_roles_wiag = dioc_joined_df.filter(pl.col("name").is_in(wiag_roles_df.get_column("name")).not_()).unique()
@@ -401,7 +395,7 @@ print(missing_roles_wiag.height)
 missing_roles_wiag.head()
 
 #%% [markdown]
-#### Join role_fg_id attribute from WIAG
+##### Join role_fg_id attribute from WIAG
 
 #%%
 wiag_roles_df = wiag_roles_df.remove(pl.col("name").is_duplicated())
@@ -413,10 +407,10 @@ joined_df = dioc_joined_df.join(wiag_roles_df.rename({'id' : 'role_id'}), on = "
 #TODO: add reason here
 
 #%%
-joined_df = joined_df.remove(pl.col('name').is_in(['Vikariatsbewerber', 'Kanonikatsbewerber'])) # TODO why?
+joined_df = joined_df.remove(pl.col('name').is_in(['Vikariatsbewerber', 'Kanonikatsbewerber']))
 
 #%% [markdown]
-#### Entries with missing factgrid entries for the roles in wiag
+##### Entries with missing FactGrid-entries for the roles in wiag
 
 #%%
 missing_roles_df = joined_df.filter(pl.col('role_fg_id').is_null())
@@ -427,9 +421,9 @@ missing_roles = missing_roles_df.select(pl.col('name'), pl.col('role_id'), pl.co
 missing_roles
 
 #%% [markdown]
-##### Create a csv file to be manually filled and later read to generate quickstatements
-# 
-#Make changes to this file and then upload it to quickstatements (don't forget to remove the item_id column).
+#### Generate missing roles file
+#Creates a file with the name create-missing-roles_\<date\>.csv
+#**You need to fill in the empty columns of the file** (except qid) and then use the file on quickstatements. As mentioned above, you can either do this right away or at the end.
 
 #%%
 create_missing_roles_df = missing_roles.with_columns(
@@ -449,32 +443,27 @@ create_missing_roles_df = missing_roles.with_columns(
     ["qid",	"Lde",	"Len",	"Lfr",	"Dde",	"Den",	"P2",	"P131",	"item_id",	"P3"]
 )
 
-create_missing_roles_df.write_csv(os.path.join(output_path, f"create-missing-roles-{today_string}.csv"), separator = ';')
+create_missing_roles_df.write_csv(os.path.join(output_path, f"create-missing-roles_{today_string}.csv"), separator = ';')
 create_missing_roles_df
-
 #%% [markdown]
+### 7. Missing institution roles
 #### Remove all missing (role) entries now **
-#The code below removes all the entries that failed the join with the wiag role join above.
+#The code below removes all the entries that failed the join with the WIAG role join above.
 
 #%%
 with_roles_in_fg_df = joined_df.remove(pl.col('role_fg_id').is_null())
 
 #%% [markdown]
-#### Check people with missing factgrid entries or missing factgrid ids in wiag
-
+#### Check for people with missing FactGrid-entries or missing FactGrid-IDs in wiag
+#There generally shouldn't be any such persons, since notebook 3 takes care of this.
 #%%
 missing_people_list = joined_df.filter(pl.col('FactGrid').is_null()).unique('person_id')
 print(missing_people_list.height)
 missing_people_list.sample(n = 3)
-
 #%% [markdown]
-#### Generate the quickstatements for creating the persons
-# 
-#Go back to [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create) to create the missing persons.
-
-#%% [markdown]
-#### Remove all missing (person) entries now **
-#The code below removes all the entries for persons that don't exist on factgrid
+#To generate quickstatements for creating the persons, go back to [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create).
+#
+#The code below removes all the entries for persons that don't exist on FactGrid
 
 #%%
 print(len(joined_df))
@@ -482,11 +471,11 @@ joined_df = joined_df.filter(pl.col('FactGrid').is_not_null())
 print(len(joined_df))
 
 #%% [markdown]
-#### Add factgrid ids for roles (with institution)
-#Note: this role has information of the institution as well
+#### Find out which institution roles are missing on FactGrid
+#these roles have information of the institution as well
 
 #%%
-#in addition to the parameters, uses the dataframe factgrid_inst_roles_df directly
+#in addition to the parameters, this uses the dataframe factgrid_inst_roles_df directly
 
 def find_fg_inst_role(name, inst, dioc):
     search_result = pl.DataFrame()
@@ -533,8 +522,9 @@ for (id, name, inst, inst_id, dioc) in joined_df.select('id', 'name', 'instituti
 print("Roles found:", len(data_dict), "duplicates:", len(dupl), "not found:", len(not_found))
 
 #%% [markdown]
-##### Create entries for missing inst roles on factgrid
-
+#### Generate missing institution roles file
+#Creates a file with the name create-missing-inst-roles_\<date\>.csv
+#**You need to fill in the empty columns of the file** (except qid) and then use the file on quickstatements. As mentioned above, you can either do this right away or at the end.
 #%%
 not_found_df = pl.DataFrame(not_found, orient = 'row', schema = ['role', 'institution', 'institution_id'])
 not_found_df = not_found_df.drop_nulls() # remove entries for diocese level roles 
@@ -564,16 +554,17 @@ not_found_df = not_found_df.with_columns(
     P131 = pl.lit('Q153178'),
     P3 = pl.col('role_fg_id'),
     P267 = pl.col('fg_institution_id'),
-    # id is the number of the role in the role table in wiag -- institution_id is the klosterdatenbank id of the institution
+    # id is the number of the role in the role table in WIAG -- institution_id is the klosterdatenbank id of the institution
     P1100 = pl.when(pl.col('id').is_null()).then(pl.lit(None)).otherwise('off' + pl.col('id').cast(str) + '_gsn' + pl.col('institution_id').cast(str))
 ).select(['qid', 'Lde', 'Len', 'Dde', 'Den', 'P2', 'P131', 'P3', 'P267', 'P1100']) # selecting only relevant columns
 
 #export to csv file
-not_found_df.write_csv(os.path.join(output_path, f"create-missing-inst-roles-{today_string}.csv"), separator=';')
+not_found_df.write_csv(os.path.join(output_path, f"create-missing-inst-roles_{today_string}.csv"), separator=';')
 print(f'{not_found_df.height} rows were written. A sample of them:')
 not_found_df.sample(n = 3)
 
 #%% [markdown]
+### 8. Missing offices
 #### Ignore all missing (inst role) entries now **
 #The code below ignores entries that are generated above and does a join without them.
 
@@ -583,9 +574,9 @@ print(len(final_joined_df))
 final_joined_df.sample(n = 3)
 
 #%% [markdown]
-#### Parse begin and end date from the wiag data
+#### Parse dates
 # 
-#The following code parses the date information present in the date_begin or date_end string and converts it to the correct property in factgrid and it's corresponding value.
+#The following code parses the date information present in the date_begin or date_end string and converts it to the correct property in FactGrid and it's corresponding value.
 #There are also testcases which are run in case you want to modify it.
 # 
 #Here is an overview of relevant FactGrid properties: [link](https://database.factgrid.de/query/embed.html#SELECT%20%3FPropertyLabel%20%3FProperty%20%3FPropertyDescription%20%3Freciprocal%20%3FreciprocalLabel%20%3Fexample%20%3Fuseful_statements%20%3Fwd%20WHERE%20%7B%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%20%20%3FProperty%20wdt%3AP8%20wd%3AQ77483.%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP364%20%3Fexample.%20%7D%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP86%20%3Freciprocal.%20%7D%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP343%20%3Fwd.%20%7D%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP310%20%3Fuseful_statements.%20%7D%0A%7D%0AORDER%20BY%20%3FPropertyLabel)
@@ -810,6 +801,7 @@ def date_parsing(date_string: str, date_type: DateType):
     return (return_property, format_datetime(entry, precision), qualifier)
 
 #%% [markdown]
+##### Test cases
 #Because there are so many special cases, testing is a must to more clearly show what is expected for each case and make sure no incorrect changes are made.
 # %%
 #TODO why resolution of 7, 8 or 9?
@@ -916,7 +908,7 @@ for key, value in only_date_tests.items():
     assert retval == value, f"{key}: Returned {retval} instead of {value}"
 
 #%% [markdown]
-#### Reconcile office data with factgrid
+#### Reconcile office data with FactGrid
 #The data that should be in FactGrid:
 #%%
 final_joined_df.head() 
@@ -1015,14 +1007,14 @@ while entries_processed < qIDs.len():
 #%%
 factgrid_roles_for_qIDs.head(n = 5)
 #%% [markdown]
-#### Generate quickstatements for offices
+#### Generate missing offices file
 #The code below creates the office entries to be uploaded on factgrid.
 #If the date parsing fails, the corresponding date string is printed out and along with the entry.
 # 
 #When the parsing fails, sometimes the date parsing defined above needs to be extended to handle cases that haven't been handled until now and sometimes entries in WIAG need to be corrected.
 
 #%%
-filepath = os.path.join(output_path, f'quickstatements_{today_string}.qs')
+filepath = os.path.join(output_path, f'quickstatements-offices_{today_string}.qs')
 
 with open(filepath, 'w') as file:
     for row in final_joined_df.iter_rows(named = True):
@@ -1052,7 +1044,7 @@ with open(filepath, 'w') as file:
             print('\n')
 
 #%% [markdown]
-#### Updating FactGrid
+### 9. Updating FactGrid
 #Once the files have been generated, please open [QuickStatements](https://database.factgrid.de/quickstatements/#/batch) and **run the CSV-commands/V1-commands** (the qs-file contains V1 commands, the csv-files CSV-commands). More details to perform this can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_factgrid_csv.md).
 #### Next notebook
 #Once the update is done, you can continue with [notebook 5](fg_to_dpr.ipynb) (fg_to_dpr).
