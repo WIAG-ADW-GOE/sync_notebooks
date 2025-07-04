@@ -10,7 +10,7 @@ import traceback
 missed = [] # entries for whom content could not be retrieved because of some error
 entries_to_be_updated = [] # FactGrid-IDs which point to an outdated WIAG-ID (WIAG redirected to a newer one) and for which the new WIAG entry does not point to the FactGrid-ID
 wiag_different_fgID = [] # WIAG-IDs that link to a different FG-ID from the one that points to them
-wiag_missing_fgID = [] # WIAG-IDs to whom a FactGrid entry points, but which point to no FactGrid-ID
+wiag_missing_fgID = [] # WIAG-IDs to whom a FactGrid-entry points, but which point to no FactGrid-ID
 
 async def get(fg_wiag_id, fg_id, session):
     global missed

@@ -3,7 +3,7 @@
 ### Add Factgrid IDs in Digitales Personenregister (DPr)
 #This notebook helps ensure that the FactGrid IDs stored in the local "Digitales Personenregister" (DPr, digital index of persons) are correct and up to date.
 # 
-#By checking which IDs match and which do not, the notebook identifies differences, such as records in FactGrid that aren’t in the Digitales Personenregister, or people in the DPr whose FactGrid ID is incorrect or outdated. After finding these differences, it creates an easy-to-use set of SQL commands, that can be run on the DPr database to fix the FactGrid IDs and ensure both sources of information match.
+#By checking which IDs match and which do not, the notebook identifies differences, such as records in FactGrid that aren’t in the Digitales Personenregister, or people in DPr whose FactGrid ID is incorrect or outdated. After finding these differences, it creates an easy-to-use set of SQL commands, that can be run on DPr database to fix the FactGrid IDs and ensure both sources of information match.
 #%% [markdown]
 ### 1. Export data from DPr
 #
@@ -73,11 +73,11 @@ joined_df = factgrid_df.merge(pr_df, how='outer', on='gsn', suffixes=('_wiag', '
 joined_df
 #%% [markdown]
 #### Entries only in FG
-#The output of the cell below shows entries in FG which point to entries that were not found in the DPr. These entries need to be **fixed manually**.
+#The output of the cell below shows entries in FG which point to entries that were not found in DPr. These entries need to be **fixed manually**.
 #%%
 joined_df[joined_df['_merge'] == 'left_only']
 #%% [markdown]
-#From now on only entries that were found both in the DPr and FG and don't point to each other are considered, because these are the cases that need to be updated.
+#From now on only entries that were found both in DPr and FG and don't point to each other are considered, because these are the cases that need to be updated.
 #%%
 unequal_df = joined_df[(joined_df['_merge'] == 'both') & (joined_df['FactGrid_ID'] != joined_df['fg_id'])]
 unequal_df
@@ -91,7 +91,7 @@ possible_dup
 #generating links to check on FactGrid
 #%%
 linkify = lambda x : 'https://database.factgrid.de/wiki/Item:' + x 
-for _, row in possible_dup.iterrows(): # if the DPr-entry points to a FactGrid-entry, but a different FG-entry points to the DPr-entry
+for _, row in possible_dup.iterrows(): # if DPr-entry points to a FactGrid-entry, but a different FG-entry points to DPr-entry
     print(linkify (row['FactGrid_ID']), linkify (row['fg_id']))
 #%% [markdown]
 #once again ignoring the special cases and continuing on with the rest

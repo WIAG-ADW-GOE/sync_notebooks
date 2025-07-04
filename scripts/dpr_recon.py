@@ -53,7 +53,7 @@ dpr_df = pd.read_csv(os.path.join(input_path, dpr_file), names=["wiag_id", "id",
 ### 3. Check for problematic entries
 #Any listed entries **need to be fixed manually** before once again exporting the updated data from WIAG and DPr
 # 
-#First a list of known problematic entries (by GSN) in the DPr is created. These entries are linked to more than one entry in WIAG and it is unclear whether the different entries reference the same person or not, so they should simply be ignored for the rest of the script.
+#First a list of known problematic entries (by GSN) in DPr is created. These entries are linked to more than one entry in WIAG and it is unclear whether the different entries reference the same person or not, so they should simply be ignored for the rest of the script.
 #%%
 gsns_of_known_problematic_wiag_entries = ['046-02872-001', '007-00413-001']
 #%% [markdown]

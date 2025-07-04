@@ -124,7 +124,7 @@ while still_missing_entries:
 additional_updates_df = pd.DataFrame(entries_to_be_updated) # FactGrid-IDs which point to an outdated WIAG-ID (WIAG redirected to a newer one) and for which the WIAG entry does not point to the FactGrid-ID
 #updating the WIAG entry with the FactGrid-ID happens in step 4
 different_fgID_df = pd.DataFrame(wiag_different_fgID, columns = ["fg_wiag_id", "wiag_redirected", "fg_id", "wiag_fg_id"])
-missing_fgID_df = pd.DataFrame(wiag_missing_fgID, columns=["fg_wiag_id", "fg_id"]) # WIAG-IDs to whom a FactGrid entry points, but which point to no FactGrid-ID
+missing_fgID_df = pd.DataFrame(wiag_missing_fgID, columns=["fg_wiag_id", "fg_id"]) # WIAG-IDs to whom a FactGrid-entry points, but which point to no FactGrid-ID
 #%% [markdown]
 #One more check needs to be done before updates can be performed.
 #If the cell below lists any entries, these entries **needs to be fixed manually**. If in doubt, ask Barbara Kroeger!
@@ -150,7 +150,7 @@ merged_df = fg_wiag_ids_df.merge(wiag_persons_df, left_on='fg_id', right_on = 'w
 fg_diff_wiag_id = merged_df[merged_df['fg_wiag_id'] != merged_df['wiag_id']]
 fg_diff_wiag_id = fg_diff_wiag_id[['fg_id', 'fg_wiag_id', 'wiag_id']] # selecting columns - no need to show the same FG-ID twice
 #%% [markdown]
-#The output of the following code block **needs to be checked fully** (if there is any). For all listed FactGrid IDs a WIAG entry is linking to them but the corresponding FactGrid entry links to a different WIAG entry. The expected solution (which will be carried out automatically) is to update the FactGrid-entry with the listed WIAG-ID, however it's a good idea to manually check this, even though all weird data constellations should have been filtered out before this step.
+#The output of the following code block **needs to be checked fully** (if there is any). For all listed FactGrid IDs a WIAG entry is linking to them but the corresponding FactGrid-entry links to a different WIAG entry. The expected solution (which will be carried out automatically) is to update the FactGrid-entry with the listed WIAG-ID, however it's a good idea to manually check this, even though all weird data constellations should have been filtered out before this step.
 
 #%%
 fg_diff_wiag_id
