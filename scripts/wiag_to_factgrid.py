@@ -589,14 +589,16 @@ class DateType(Enum):
     BEGIN_DATE = 1
     END_DATE = 2
 
-#date precision (https://www.wikidata.org/wiki/Help:QuickStatements)
+#date precision and calendar declaration (see Time at https://www.wikidata.org/wiki/Help:QuickStatements#Add_simple_statement)
 PRECISION_CENTURY = 7
 PRECISION_DECADE = 8
 PRECISION_YEAR = 9
+PRECISION_MONTH = 10
+PRECISION_DAY = 11
+JULIAN_ENDING = '/J'
 
 #defining some constants for better readability of the code:
 #self defined:
-JULIAN_ENDING = '/J'
 JHS_GROUP = r'(Jhs\.|Jahrhunderts?)'
 JH_GROUP = r'(Jh\.|Jahrhundert)'
 EIGTH_OF_A_CENTURY = 13
@@ -639,11 +641,14 @@ OR_FOLLOWING_YEAR = 'Q912616'
 def format_datetime(entry: datetime, precision: int):
     ret_val =  f"+{entry.isoformat()}Z/{precision}"
 
-    if entry.year < 1582:
+    if entry.year < 1582: # declaring that the julian calendar is being used by adding '/J' to the end
         ret_val +=  JULIAN_ENDING
     
-    if precision <= 9:
+    #on FactGrid, if the date is at most accurate to a year, the day and month are set to 0. The datetime type in Python does not allow you to set the day or month to 0 so we need to replace it manually
+    if precision <= PRECISION_YEAR:
         ret_val = ret_val.replace(f"{entry.year}-01-01", f"{entry.year}-00-00", 1)
+    elif precision == PRECISION_MONTH:
+        ret_val = ret_val.replace(f"{entry.year}-{entry.month}-01", f"{entry.year}-{entry.month}-00", 1)
 
     return ret_val
 
@@ -799,7 +804,6 @@ def date_parsing(date_string: str, date_type: DateType):
         raise Exception(f"Couldn't parse date '{date_string}'")
         
     return (return_property, format_datetime(entry, precision), qualifier)
-
 #%% [markdown]
 ##### Test cases
 #Because there are so many special cases, testing is a must to more clearly show what is expected for each case and make sure no incorrect changes are made.
@@ -813,6 +817,7 @@ def date_parsing(date_string: str, date_type: DateType):
     # "(vor 1254) 1256"
 
 begin_date_tests = {
+    "1605": (BEGIN_DATE, "+1605-00-00T00:00:00Z/9"),
     "1205": (BEGIN_DATE, "+1205-00-00T00:00:00Z/9/J"),
     "1205?": (BEGIN_DATE, "+1205-00-00T00:00:00Z/9/J", STRING_PRECISION_BEGIN_DATE + '\t"1205?"'),
     "12. Jahrhundert": (BEGIN_DATE, "+1200-00-00T00:00:00Z/7/J"),
