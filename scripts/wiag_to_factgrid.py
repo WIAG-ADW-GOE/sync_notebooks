@@ -62,7 +62,7 @@ today_string = datetime.now().strftime('%Y-%m-%d')
 #2. log in 
 #3. select the 'wiagvokabulare' database
 #4. switch to the 'SQL' tab
-#5. copy [this query](queries/get_wiag_person_ids.sql), paste it in the text field and click 'Go'
+#5. copy [this query](queries/get_wiag_roles.sql), paste it in the text field and click 'Go'
 #6. export the result to a csv file 
 #### Import the files
 #Please move the downloaded file to the `input_path` directory defined above or change the `input_path` to where the file is located.
