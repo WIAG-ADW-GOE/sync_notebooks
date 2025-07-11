@@ -5,7 +5,7 @@
 #%% [markdown]
 ### 1. Export data from DPr
 #
-#For this step you have to manually export the datasets by following the steps. In case the text description is not enough, a description with screenshots can be found [here](docs/Run_SQL_Query_and_Export_CSV.md).
+#For this step you have to manually export the datasets by following the steps. In case the text description is not enough, a description with screenshots can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_SQL_Query_and_Export_CSV.md).
 #
 #1. open [phpMyAdmin DPr](https://personendatenbank.germania-sacra.de/phpmyadmin/)
 #2. log in 

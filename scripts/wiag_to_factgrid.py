@@ -56,7 +56,7 @@ today_string = datetime.now().strftime('%Y-%m-%d')
 #%% [markdown]
 ### 2. Download data from WIAG
 #### Export data via phpMyAdmin
-#For this step you have to manually export the datasets by following the steps. In case the text description is not enough, a description with screenshots can be found [here](docs/Run_SQL_Query_and_Export_CSV.md).
+#For this step you have to manually export the datasets by following the steps. In case the text description is not enough, a description with screenshots can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_SQL_Query_and_Export_CSV.md).
 #
 #1. open [phpMyAdmin WIAG](https://vwebfile.gwdg.de/phpmyadmin/)
 #2. log in 
@@ -75,12 +75,14 @@ len(wiag_roles_df)
 
 #%% [markdown]
 #### Export data via the website
-#https://wiag-vokabulare.uni-goettingen.de/query/can
-# 
+#
 #It's recommended to limit the export to one Domstift by first searching for that Domstift before exporting the 'CSV Amtsdaten' to make sure that the amount of roles to be added is manageable.
 #
+#1. go to https://wiag-vokabulare.uni-goettingen.de/query/can
+#2. filter by cathedral chapter (Domstift)
+#3. click Export->Amtsdaten
+# 
 #If you filtered by Domstift (cathedral chapter), **change the variable below** to the domstift you used and **change the name of the exported file** to include the name of the cathedral chapter.
-#
 #
 #If you did not filter, you need to change the line to `domstift = ""`.
 
@@ -1010,7 +1012,13 @@ while entries_processed < qIDs.len():
   entries_processed += CHUNK_SIZE  
 
 #%%
-factgrid_roles_for_qIDs.head(n = 5)
+j_df = final_joined_df.join(other = factgrid_roles_for_qIDs, left_on = ["FactGrid", "fg_inst_role_id"], right_on = ["qID", "role"]) #, validate = "1:m") it's not 1:m, which makes sense when there are multiple entries for one inst role 
+j_df.sample(n = 5)
+# TODO now that we have only rows which contain an office for a person that already has some kind of entry regarding the relevant inst role, check whether the dates match up
+# if the dates match up, disregard the row -- if they are completely separate, the row should prob be uploaded -- if they somehow overlap, manual checking seems necessary
+# also check that the source matches with the person_id
+
+# also upload the other rows which have no relevant inst role on FG yet. Does this work? final_joined_df.join(other = factgrid_roles_for_qIDs, left_on = ["FactGrid", "fg_inst_role_id"], right_on = ["qID", "role"], how = "anti")
 #%% [markdown]
 #### Generate missing offices file
 #The code below creates the office entries to be uploaded on factgrid.

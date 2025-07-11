@@ -108,7 +108,7 @@ path_to_repository = r"C:\Users\Public"
 #Please note, that the code cell below can take **up to 10 minutes.** Should the cell fail, try running it again (likely cause is a timeout).
 #The cell automatically checks for entries to update by checking WIAG-IDs that are referenced in FactGrid.
 #%%
-path_to_function_scripts = path_to_repository + r"\sync_notebooks\scripts\factgrid_recon_function_definitions.py"
+path_to_function_scripts = path_to_repository + r"\sync_notebooks\scripts\fg_wiag_ids_functions.py"
 #This runs the python script located under the given path to define two needed functions (one is the main function called below).
 %run $path_to_function_scripts
 

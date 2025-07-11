@@ -15,6 +15,8 @@ To use the notebooks, first some software (Python and Julia) needs to be install
 ## General notes
 Ignoring instructions could lead to data inconsistencies, which might be difficult to fix. Make sure to follow instructions in the notebooks (like checking outputs manually) to avoid this. Also for the same reason don't rush through notebooks. Unless you know the notebook extremely well, always execute cells one at a time to monitor progress and catch any errors early.
 
+Also important is to always use up-to-date data. Don't use old exports, because this might lead to data inconsistencies (e.g. if a person was deleted but the export you use still contains that entry).
+
 ## Workflow Overview
 
 The synchronization process involves several steps, each performed using a specific Jupyter notebook or action. The steps are designed to be executed in a specific sequence to maintain data consistency.
