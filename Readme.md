@@ -32,7 +32,7 @@ The synchronization process involves several steps, each performed using a speci
 
 Note:
 - The notebooks contain all necessary information for executing them (step 0 is explained belowStep 0 is a non-notebook action and is explained [below](#import-dpr-entries-into-wiag-non-notebook-action). The notebooks themselves contain all necessary information for executing them.).
-- Step 6 can be skipped. This step is very long and you might not be interested in creating the offices for all persons along with all the other FactGrid-entries. Also, the results of this step do not affect any other steps down the line.
+- Notebook 4 can be skipped. It's very long and you might not be interested in creating the offices for all persons along with all the other FactGrid-entries. Also, the results of this step do not affect any other steps down the line.
 
 ### Import DPr-entries into WIAG (non-notebook action)
 
