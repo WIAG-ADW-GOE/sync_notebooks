@@ -1,0 +1,96 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0" version="28.2.5">
+  <diagram name="Page-1" id="b88l9EptPD5RRYh1V0vd">
+    <mxGraphModel dx="983" dy="620" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-4" value="WIAG" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;labelBackgroundColor=none;fillColor=#5D7F99;strokeColor=#D0CEE2;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry y="320" width="120" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-5" value="&lt;div&gt;FactGrid&lt;/div&gt;&lt;div&gt;(FG)&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;labelBackgroundColor=none;fillColor=#5D7F99;strokeColor=#D0CEE2;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="480" y="320" width="120" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-6" value="&lt;div&gt;Digitales Personenregister (DPr)&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;labelBackgroundColor=none;fillColor=#5D7F99;strokeColor=#D0CEE2;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="240" y="80" width="120" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-7" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.017;exitY=0.642;exitDx=0;exitDy=0;entryX=0.667;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;entryPerimeter=0;labelBackgroundColor=none;strokeColor=#736CA8;fontColor=default;" edge="1" parent="1" source="0hDfRQBYGl1abeD-dmwz-6" target="0hDfRQBYGl1abeD-dmwz-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="390" y="490" as="sourcePoint" />
+            <mxPoint x="440" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-8" value="&lt;div&gt;0. Import DPr entries&lt;/div&gt;&lt;div&gt;(&lt;b&gt;manual action&lt;/b&gt;)&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=light-dark(#5D7F99,#6C899F);fontColor=#1A1A1A;" vertex="1" connectable="0" parent="0hDfRQBYGl1abeD-dmwz-7">
+          <mxGeometry x="-0.0153" y="-3" relative="1" as="geometry">
+            <mxPoint x="-40" y="-25" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-9" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;labelBackgroundColor=none;strokeColor=#736CA8;fontColor=default;" edge="1" parent="1" source="0hDfRQBYGl1abeD-dmwz-4" target="0hDfRQBYGl1abeD-dmwz-6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="390" y="490" as="sourcePoint" />
+            <mxPoint x="440" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-10" value="&lt;div&gt;1. Update WIAG-IDs&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=light-dark(#5D7F99,#6C899F);fontColor=#1A1A1A;" vertex="1" connectable="0" parent="0hDfRQBYGl1abeD-dmwz-9">
+          <mxGeometry x="-0.1418" relative="1" as="geometry">
+            <mxPoint x="51" y="-11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-11" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=0.971;exitY=0.331;exitDx=0;exitDy=0;entryX=0.029;entryY=0.339;entryDx=0;entryDy=0;entryPerimeter=0;exitPerimeter=0;labelBackgroundColor=none;strokeColor=#736CA8;fontColor=default;" edge="1" parent="1" source="0hDfRQBYGl1abeD-dmwz-4" target="0hDfRQBYGl1abeD-dmwz-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="390" y="490" as="sourcePoint" />
+            <mxPoint x="440" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-12" value="&lt;div&gt;2. Update WIAG-IDs in FG, then add FG-IDs in WIAG&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=light-dark(#5D7F99,#6C899F);fontColor=#1A1A1A;" vertex="1" connectable="0" parent="0hDfRQBYGl1abeD-dmwz-11">
+          <mxGeometry x="-0.0333" y="-2" relative="1" as="geometry">
+            <mxPoint x="6" y="8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-13" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.573;exitDx=0;exitDy=0;entryX=0.003;entryY=0.591;entryDx=0;entryDy=0;exitPerimeter=0;entryPerimeter=0;labelBackgroundColor=none;strokeColor=#736CA8;fontColor=default;" edge="1" parent="1" source="0hDfRQBYGl1abeD-dmwz-4" target="0hDfRQBYGl1abeD-dmwz-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="370" y="440" as="sourcePoint" />
+            <mxPoint x="420" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-14" value="&lt;div&gt;3. Create new entries in FG&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=light-dark(#5D7F99,#6C899F);fontColor=#1A1A1A;" vertex="1" connectable="0" parent="0hDfRQBYGl1abeD-dmwz-13">
+          <mxGeometry x="0.1333" y="1" relative="1" as="geometry">
+            <mxPoint x="-24" y="11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-15" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;labelBackgroundColor=none;strokeColor=#736CA8;fontColor=default;" edge="1" parent="1" source="0hDfRQBYGl1abeD-dmwz-4" target="0hDfRQBYGl1abeD-dmwz-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="370" y="440" as="sourcePoint" />
+            <mxPoint x="420" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-16" value="&lt;div&gt;4. Add Roles, Institutions, Institution Roles and Offices&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=light-dark(#5D7F99,#6C899F);fontColor=#1A1A1A;" vertex="1" connectable="0" parent="0hDfRQBYGl1abeD-dmwz-15">
+          <mxGeometry x="0.075" y="-1" relative="1" as="geometry">
+            <mxPoint y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-17" value="" style="endArrow=classic;html=1;rounded=0;entryX=1.009;entryY=0.652;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.333;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;labelBackgroundColor=none;strokeColor=#736CA8;fontColor=default;" edge="1" parent="1" source="0hDfRQBYGl1abeD-dmwz-5" target="0hDfRQBYGl1abeD-dmwz-6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="380" y="420" as="sourcePoint" />
+            <mxPoint x="430" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-20" value="5. Add/Update FG-IDs" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=light-dark(#5D7F99,#6C899F);fontColor=#1A1A1A;" vertex="1" connectable="0" parent="0hDfRQBYGl1abeD-dmwz-17">
+          <mxGeometry x="-0.0146" y="-2" relative="1" as="geometry">
+            <mxPoint x="37" y="-9" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-18" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=0;entryDy=0;labelBackgroundColor=none;strokeColor=#736CA8;fontColor=default;" edge="1" parent="1" source="0hDfRQBYGl1abeD-dmwz-6" target="0hDfRQBYGl1abeD-dmwz-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="340" as="sourcePoint" />
+            <mxPoint x="500" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0hDfRQBYGl1abeD-dmwz-19" value="6. Add/Update GSNs" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=light-dark(#5D7F99,#6C899F);fontColor=#1A1A1A;" vertex="1" connectable="0" parent="0hDfRQBYGl1abeD-dmwz-18">
+          <mxGeometry x="-0.3781" y="1" relative="1" as="geometry">
+            <mxPoint x="-11" y="30" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

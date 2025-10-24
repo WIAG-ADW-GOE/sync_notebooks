@@ -19,17 +19,19 @@ Also important is to always use up-to-date data. Don't use old exports, because 
 
 ## Workflow Overview
 
-The synchronization process involves several steps, each performed using a specific Jupyter notebook or action. The steps are designed to be executed in a specific sequence to maintain data consistency.
+The synchronization process involves several steps, each performed using a specific Jupyter notebook or action. The steps are designed to be executed in a specific sequence to maintain data consistency. The diagram below displays which steps interact with which systems. Below the diagram is also a list of the steps with some more notes.
+
+![A diagram showing the workflow.](docs/images/sync_notebooks.svg)
 
 ### Order of steps
 
 0. **Import DPr-entries into WIAG** (non-notebook action explained [below](#import-dpr-entries-into-wiag-non-notebook-action))
-1. **Update WIAG IDs in Digitales Personenregister (DPr)** (`dpr_recon.ipynb`)
+1. **Update WIAG-IDss in Digitales Personenregister (DPr)** (`dpr_recon.ipynb`)
 2. **Update WIAG-IDs in FactGrid and then add FG-IDs in WIAG** (`fg_wiag_ids.ipynb`)
 3. **Create New Entries on FactGrid from WIAG** (`Csv2FactGrid-create.ipynb`)
-4. **Add Offices to Persons on FactGrid** (`wiag_to_factgrid.ipynb`)
-5. **Update DPr Entries with FactGrid Links** (`fg_to_dpr.ipynb`)
-6. **Update FactGrid Entries with DPr Links** (`dpr_to_fg.ipynb`)
+4. **Add Roles, Institutions, Institution Roles and Offices on FactGrid** (`wiag_to_factgrid.ipynb`)
+5. **Add/Update FG-IDs in DPr** (`fg_to_dpr.ipynb`)
+6. **Add/Update GSNs in FactGrid** (`dpr_to_fg.ipynb`)
 [link](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/wiag_to_factgrid.ipynb#parse-begin-and-end-date-from-the-wiag-data)
 
 Note:
