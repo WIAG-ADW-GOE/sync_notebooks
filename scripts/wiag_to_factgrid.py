@@ -1,35 +1,15 @@
 #%% [markdown]
-## 4. wiag_to_factgrid.ipynb
+## 4. Add WIAG roles, institutions, institution roles and offices to FactGrid
 # 
-### Office Creation Notebook
-#This notebook takes data from WIAG as the primary source, then joins it with
-#* institution data from FactGrid
-#* diocese data from FactGrid
-#* role data from wiag
-#* role data from FactGrid
+#This notebook takes data from WIAG as the primary source and joins it with data from FactGrid to find out which institutions, roles or institution roles need to be added to FactGrid. After generating files for adding these things to FactGrid (institutions are now instead added using the workflow developed for [DomVoc](https://github.com/Germania-Sacra/DomVoc/tree/main)), at the end a file for adding all offices of persons to FactGrid is generated.
 # 
-#and then creates a final quickstatements csv at the end to be uploaded to FactGrid.
-# 
-#At every join operation, there is the possibility that some data in WIAG has no corresponding data in factgrid.
-#The notebook create a quickstatements csv to create the missing data whenever this happens.
-#After creating the csv, it removes all the missing entries and moves on the next step (these cells are marked with two stars **). There are two possible routes to execute this notebook:
-#1. [Import the csv files to factgrid](https://database.factgrid.de/quickstatements/#/batch) whenever one is generated, and then run the notebook from the beginning up to that point. 
-#2. Do not create any FactGrid-entries except at the very last step. This flow works since all missing entries are ignored after their corresponding csv file is generated.
-# 
-#This is explained with the diagram below. The description of the shapes is below:
-#* Diamonds: The diamonds indicate a join operation. After this operation you have entries that have been successfully added information to.
-#* Circles: The circles indicate the records that were successfully joined. This means that there was more information added to the orignal record.
-#* Rectangle: The rectanges indicate the records that failed the join operation.
-# 
-#![office_creation_flow.drawio.png](docs/images/office_creation_flow.drawio.png)
-# 
-#The large arrow on the right that goes back up indicates that after a join operation is failed, you could use the generated files to fix the problems with the records and start from the top again.
-# 
-#So the first route to execute this notebook is to follow the square blocks as soon as you encounter one and then take the arrow back to the start. The second route is to follow the circle blocks and go down until the final csv file is generated.
+#Whenever a file is generated, all entries with institutions/roles/inst roles, that still need to be added to FG, are from then on ignored so the other steps can be performed for the rest of the entries. This enables you to go through the notebook linearly from start to finish and add all four things for the majority of entries right away. This means though, that you will need to go through the notebook multiple (up to four) times to make sure FactGrid is all up-to-date.
+#
+#Another possible workflow for the notebook is to use the generated files right away whenever one is generated to add things to FG and after that is done, start from the beginning of the notebook again. This way you also need to go through the notebook multiple times, but only need to upload one file per thing (institutions, roles, inst roles, offices).
 
 #%% [markdown]
 ### 1. Setup
-# 
+#
 
 #%%
 import requests
@@ -38,39 +18,52 @@ import os
 import json
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, date
 import math
 import traceback
 import polars as pl
 import polars.selectors as cs
+from enum import Enum
 
-#%%
-input_path = r"C:\Users\Public\sync_notebooks\input_files"
-
-#%%
-output_path = r"C:\Users\Public\sync_notebooks\output_files"
-
-#%%
 today_string = datetime.now().strftime('%Y-%m-%d')
 
 #%% [markdown]
+#For the automatic translation, AI models hosted by the GWDG are used. For this a [SAIA](https://docs.hpc.gwdg.de/services/saia/index.html) API key is needed. You can either uncomment the line in the cell below and replace the placeholder with your key or (safer option) create a text-file (called `.env`) in the project directory containing `API_KEY="PLACEHOLDER"` (with your key inserted) before running the cell below.
+
+#%%
+#API_KEY="PLACEHOLDER"
+
+import scripts.translate
+
+#%% [markdown]
+#The cell below defines where input files can be found and where the generated files will be saved to. 
+#%%
+input_path = r"C:\Users\Public\sync_notebooks\input_files"
+
+output_path = r"C:\Users\Public\sync_notebooks\output_files"
+
+#%% [markdown]
 ### 2. Download data from WIAG
+#
 #### Export data via phpMyAdmin
+#
 #For this step you have to manually export the datasets by following the steps. In case the text description is not enough, a description with screenshots can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_SQL_Query_and_Export_CSV.md).
 #
 #1. open [phpMyAdmin WIAG](https://vwebfile.gwdg.de/phpmyadmin/)
-#2. log in 
+#2. log in
 #3. select the 'wiagvokabulare' database
 #4. switch to the 'SQL' tab
 #5. copy [this query](queries/get_wiag_roles.sql), paste it in the text field and click 'Go'
-#6. export the result to a csv file 
+#6. export the result to a csv file
+
 #### Import the files
+#
 #Please move the downloaded file to the `input_path` directory defined above or change the `input_path` to where the file is located.
 
 #%%
 input_file = f'role.csv'
 input_path_file = os.path.join(input_path, input_file)
-wiag_roles_df = pl.read_csv(input_path_file, null_values='NULL', columns = [0, 2, 17], new_columns=['id', 'name', 'role_fg_id'])
+wiag_roles_df = pl.read_csv(input_path_file)
 len(wiag_roles_df)
 
 #%% [markdown]
@@ -78,7 +71,7 @@ len(wiag_roles_df)
 #
 #It's recommended to limit the export to one Domstift by first searching for that Domstift before exporting the 'CSV Amtsdaten' to make sure that the amount of roles to be added is manageable.
 #
-#1. go to https://wiag-vokabulare.uni-goettingen.de/query/can
+#1. go to https://wiag-vocab.adw-goe.de/query/can
 #2. filter by cathedral chapter (Domstift)
 #3. click Export->Amtsdaten
 # 
@@ -87,7 +80,7 @@ len(wiag_roles_df)
 #If you did not filter, you need to change the line to `domstift = ""`.
 
 #%%
-domstift = "Mainz" # with domstift = "Mainz" the name of the file should be "WIAG-Domherren-DB-Ämter-Mainz.csv"
+domstift = "Bamberg" # with domstift = "Mainz" the name of the file should be "WIAG-Domherren-DB-Ämter-Mainz.csv"
 #domstift = "" # in case you did not filter by Domstift, use this instead
 
 #%%
@@ -97,8 +90,8 @@ else:
     input_file = f'WIAG-Domherren-DB-Ämter-' + domstift + '.csv'
 
 input_path_file = os.path.join(input_path, input_file)
-role_all_df = pl.read_csv(input_path_file, separator=';', infer_schema_length = None)
-len(role_all_df)
+wiag_offices_df = pl.read_csv(input_path_file, separator=';', infer_schema_length = None)
+len(wiag_offices_df)
 
 #%%
 last_modified = datetime.fromtimestamp(os.path.getmtime(input_path_file))
@@ -107,6 +100,7 @@ assert last_modified.day == now.day and last_modified.month == now.month, f'The 
 
 #%% [markdown]
 ##### Troubleshooting: Old file used
+#
 #You get an error when you run the line above if the file was not updated today.
 #Suggested solutions: 
 #* update the file again by downloading it again
@@ -115,122 +109,30 @@ assert last_modified.day == now.day and last_modified.month == now.month, f'The 
 
 #%% [markdown]
 ### 3. Download data from FactGrid
-# 
-#Troubleshooting: If any of the following requests to FactGrid fail, try rerunning the cells.
+#
+#
+#
+#Troubleshooting: If the following cell throws an error, try rerunning the cell. Its probably just a connection problem.
+
+#%%
+from scripts.wiag_to_factgrid_functions import load_fg_data
+
+(factgrid_institution_df, factgrid_diocese_df, factgrid_inst_roles_df) = load_fg_data()
 
 #%% [markdown]
-#The following cell looks up institutions with an entry in the 'Klosterdatenbank' and gets their id.
-
-#%%
-url = 'https://database.factgrid.de/sparql'
-query = (
-    """SELECT ?item ?gsn WHERE {
-  ?item wdt:P471 ?gsn
-}
-"""
-)
-#SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-
-#make request: 
-r = requests.get(url, params={'query': query}, headers={"Accept": "application/json"})
-data = r.json()
-factgrid_institution_df = pl.json_normalize(data['results']['bindings'])
-factgrid_institution_df = factgrid_institution_df.cast({'gsn.value':pl.UInt32})
-
-len(factgrid_institution_df)
-
-#%%
-url = 'https://database.factgrid.de/sparql'
-query = (
-"""
-SELECT DISTINCT ?item ?wiagid ?label ?alternative WHERE {
-  ?item wdt:P2/wdt:P3* wd:Q164535.
-  #?item schema:description ?itemDesc.
-  ?item rdfs:label ?label.
-  OPTIONAL {?item schema:description ?itemDesc.}
-  OPTIONAL {?item skos:altLabel ?alternative. }
-  OPTIONAL {?item wdt:P601 ?wiagid.}
-  FILTER(LANG(?label) in ("en", "de"))
-}
-"""
-)
-
-#make request: 
-r = requests.get(url, params={'query': query}, headers={"Accept": "application/json"})
-data = r.json()
-factgrid_diocese_df = pl.json_normalize(data['results']['bindings'])
-
-len(factgrid_diocese_df)
-
-#%%
-url = 'https://database.factgrid.de/sparql'
-query = (
-"""
-SELECT ?item ?label WHERE {
-  ?item wdt:P2 wd:Q257052.
-  ?item rdfs:label ?label.
-  FILTER(LANG(?label) in ("de"))
-}
-"""
-)
-
-r = requests.get(url, params={'query': query}, headers={"Accept": "application/json"})
-data = r.json()
-factgrid_inst_roles_df = pl.json_normalize(data['results']['bindings'])
-
-len(factgrid_inst_roles_df)
-
-#%% [markdown]
-#### Clean Factgrid data
-
-#%%
-#extract out q id
-def extract_id(df, column):
-    return df.with_columns(pl.col(column).str.strip_chars('https://database.factgrid.de/entity/'))
-
-#drop irrelevant columns
-def drop_type_columns(df):
-    df = df.drop(
-        cs.ends_with("type"),
-        cs.ends_with("xml:lang")
-        )
-    return df
-
-#%%
-factgrid_institution_df = extract_id(factgrid_institution_df, 'item.value')
-factgrid_diocese_df = extract_id(factgrid_diocese_df, 'item.value')
-factgrid_inst_roles_df = extract_id(factgrid_inst_roles_df, 'item.value')
-
-#%%
-factgrid_institution_df = drop_type_columns(factgrid_institution_df)
-factgrid_diocese_df = drop_type_columns(factgrid_diocese_df)
-factgrid_inst_roles_df = drop_type_columns(factgrid_inst_roles_df)
-
-#%%
-#rename columns
-factgrid_institution_df.columns = ['fg_institution_id', 'fg_gsn_id']
-factgrid_diocese_df.columns = ["fg_diocese_id", "dioc_label", "dioc_alt", "dioc_wiag_id"]
-factgrid_inst_roles_df.columns = ["fg_inst_role_id", "inst_role"]
-
-#%%
-#clean the diocese alts by removing BITECA and BETA entries 
-factgrid_diocese_df = factgrid_diocese_df.with_columns(pl.col('dioc_alt').str.replace('^(BITECA|BETA).*', ''))
+#### Check for possible institution duplicates
+#
+#If any two (or more) institutions on FactGrid link to the same GSN, they will be listed below. These entries need to be **fixed manually**. Use the `fg_institution_id` to find and fix the entries on FG.
+#
+#You can either fix the duplicates now or just continue on and fix them later, because they will be ignored for the rest of the notebook.
+#Not fixing them now means though, that you will need to run the notebook again at a later point.
 
 #%%
 duplicate_fg_entries = factgrid_institution_df.group_by('fg_gsn_id').len().filter(pl.col('len') > 1)
 if not duplicate_fg_entries.is_empty():
-    print(duplicate_fg_entries)
-    raise f"There are possible institution duplicates on factgrid."
+    display(factgrid_institution_df.filter(pl.col('fg_gsn_id').is_in(duplicate_fg_entries.get_column('fg_gsn_id').implode())))
 
-#%% [markdown]
-##### Troubleshooting: possible institution duplicates
-#This can be caused by a simple human error on factgrid. 
-#The best solution is to use the FactGrid-IDs printed above and resolve the duplicates.
-# 
-#In case you want to ignore the duplicates, uncomment the code below by removing the leading '# ' (keyboard shortcut 'ctrl + /') and run it.
-
-#%%
-#factgrid_institution_df = factgrid_institution_df.filter(pl.col('fg_gsn_id').is_in(duplicate_fg_entries.select('fg_gsn_id').not_()))
+factgrid_institution_df = factgrid_institution_df.filter(pl.col('fg_gsn_id').is_in(duplicate_fg_entries.get_column('fg_gsn_id').implode()).not_())
 
 #%% [markdown]
 ### 4. Join the data
@@ -239,11 +141,11 @@ if not duplicate_fg_entries.is_empty():
 #First the WIAG "Amtsdaten" for Domherren export is joined with institution data from FactGrid
 
 #%%
-role_inst_df = role_all_df.join(factgrid_institution_df, how='left', left_on='institution_id', right_on='fg_gsn_id')
+wiag_offices_df = wiag_offices_df.join(factgrid_institution_df, how='left', left_on='institution_id', right_on='fg_gsn_id')
 
 #%% [markdown]
 #Next the diocese data is added.
-# 
+#
 #For each entry in the input dataframe, the associated diocese is searched in the factgrid_diocese_df dataframe. The diocese is found by first searching for the WIAG-ID. Only if no entry was found, the search continues with the diocese's name, first in the diocese label and lastly, if the search was unsuccessfull again, in the diocese alt label.
 
 #%%
@@ -251,7 +153,7 @@ role_inst_df = role_all_df.join(factgrid_institution_df, how='left', left_on='in
 rows = []
 query = pl.DataFrame() # empty initialisation to enable the call of the clear function below
 
-for row in role_inst_df.iter_rows(named = True):
+for row in wiag_offices_df.iter_rows(named = True):
     query = query.clear()
 
     if row['diocese_id'] != None:
@@ -267,20 +169,18 @@ for row in role_inst_df.iter_rows(named = True):
         rows.append({'role_all-id': row['id'], 'fg_diocese_id': query.row(0)[0]})
     # #TODO should cases where no result was found be noted/handled?
 
-role_inst_dioc_df = role_inst_df.join(pl.DataFrame(rows), how = 'left', left_on = 'id', right_on = 'role_all-id')
+wiag_offices_df = wiag_offices_df.join(pl.DataFrame(rows), how = 'left', left_on = 'id', right_on = 'role_all-id')
 
 #%% [markdown]
 ### 5. Missing institutions
 
 #%% [markdown]
 #### Check for special cases
+#
 #These lists below allow the code below to identify if the role is missing an institution or if the role doesn't require one at all.
-# 
 #* The `unbound_role_groups` list contains the role_groups that are not bound to a place at all.
-# 
 #* The `diocese_role_groups` list contains the role_groups that are bound to a diocese but not an institution.
 #  * `diocese_role_group_exception_roles` contains roles that belong to this group but are still bound to an institution.
-# 
 #Please add more role_groups or roles to the lists if necessary.
 
 #%%
@@ -294,13 +194,13 @@ diocese_role_groups = [
     'Leitungsamt Diözese',
     'Bischöfliches Hilfspersonal',
 ]
-diocese_role_group_exception_roles = [
-    None,
+diocese_role_group_exception_roles = [ 
+    'Erzbischöflicher Prokurator',
 ]
 
 #%%
 #select all entries that should contain an institution on FactGrid but don't have it after the join operation
-missing_inst_df = role_inst_dioc_df.filter(
+missing_inst_df = wiag_offices_df.filter(
     pl.col('fg_institution_id').is_null() &
     pl.col('role_group').is_in(unbound_role_groups).not_() &
     pl.col('role_group').is_in(diocese_role_groups).not_()
@@ -308,7 +208,7 @@ missing_inst_df = role_inst_dioc_df.filter(
 print(str(missing_inst_df.height) + " entries with missing institution id in FG")
 
 #select all entries that should contain a diocese on FactGrid but don't have it after the join operation
-missing_dioc_df = role_inst_dioc_df.filter(
+missing_dioc_df = wiag_offices_df.filter(
     pl.col('fg_diocese_id').is_null() & 
     pl.col('role_group').is_in(unbound_role_groups).not_() & 
     pl.col('role_group').is_in(diocese_role_groups) &
@@ -317,13 +217,28 @@ missing_dioc_df = role_inst_dioc_df.filter(
 print(str(missing_dioc_df.height) + " entries with missing diocese id in FG")
 
 #%% [markdown]
-##### Check for new roles (roles that so far have not been handled by this notebook)
-#Any roles showing up here need to be added to either the `diocese_role_group_exception_roles` list if they don't need a diocese entry in FactGrid or to the `roles_that_need_a_diocese` list (defined below) if they do need a diocese entry. If you added a name to the `diocese_role_group_exception_roles` list, rerun the cells from the start of step 5 to make sure the change is propagated.
+#### Check for new roles (roles that so far have not been handled by this notebook)
+#
+#
+#
+#Any roles showing up here need to be added to the `diocese_role_group_exception_roles` list if they don't need a diocese entry in FactGrid. If you added a name to the `diocese_role_group_exception_roles` list, rerun the cells from the start of step 5 to make sure the change is propagated.
+#
+#
+#
+# - diocese is missing WIAG
+# - diocese is missing in FG
+# - diocese in FG does not have the Q164535 property
+# - diocese in FG has a different German label and no WIAG ID -> list label from WIAG as an alternative label
+# - diocese in FG is missing German label and WIAG ID -> add German label
+# - role that should not be uploaded to FactGrid
+# - incorrect office assignment in WIAG
+# - a role that should be added to unbound_roles
+# - role with incorrect role group assignment
 
 #%%
-roles_that_need_a_diocese = ['Bischof', 'Koadjutor', 'Erzbischof']
+#roles_that_need_a_diocese = ['Bischof','Koadjutor','Erzbischof']
+roles_that_need_a_diocese = ['Archipresbyter','Propst und Archidiakon']
 missing_dioc_df.filter(pl.col('name').is_in(roles_that_need_a_diocese).not_())
-
 #%% [markdown]
 ##### Check entries that have no role group in wiag
 
@@ -331,44 +246,40 @@ missing_dioc_df.filter(pl.col('name').is_in(roles_that_need_a_diocese).not_())
 missing_inst_df.filter(pl.col('role_group').is_null())
 
 #%% [markdown]
-##### Check for entries that are missing an id required for the join
+##### Check for entries that are missing an id **in WIAG** required for the join
 #Please **manually inspect all the entries** that are shown by the code cells below
 
 #%% [markdown]
-#Entries that have a missing institution id in WIAG
+#Entries that have a missing institution id **in WIAG**
 
 #%%
 missing_inst_df.filter(pl.col('institution_id').is_null())
 
 #%% [markdown]
-#Entries that have a missing diocese id in WIAG
+#Entries that have a missing diocese id **in WIAG**
 
 #%%
 missing_dioc_df.filter(pl.col('diocese_id').is_null())
 
 #%% [markdown]
-#### Generate missing institutions file
+#### Missing institutions
 #
-#Creates a file with the name create-missing-institutions_\<date\>.csv
-#**You need to fill in the empty columns of the file** (except qid) and then use the file on quickstatements. As mentioned above, you can either do this right away or at the end.
+#If there are any institutions listed here, they should be added using the workflow that was designed for adding monasteries as part of the DomVoc project. The code can be found on [GitHub](https://github.com/Germania-Sacra/DomVoc/tree/main).
 
 #%%
 create_institution_factgrid_df = missing_inst_df.filter(pl.col('institution_id').is_not_null()).rename({'institution' : 'Lde', 'institution_id' : 'P471'}).unique(subset = pl.col('P471')).with_columns(
     qid = None,
     Len = None,
-    Lfr = None,
-    Les = None,
     Dde = None,
     Den = None,
     P131 = pl.lit('Q153178')
-).select(['qid', 'Lde', 'Len',	'Lfr',	'Les',	'P471',	'Dde',	'Den',	'P131'])
+).select(['qid', 'Lde', 'Len',	'P471',	'Dde',	'Den',	'P131'])
 
-create_institution_factgrid_df.write_csv(file = os.path.join(output_path, f'create-missing-institutions_{today_string}.csv'), separator = ';')
-
-create_institution_factgrid_df.sample(n = 5)
+create_institution_factgrid_df
 
 #%% [markdown]
 ### 6. Missing roles
+#
 #These roles do not include the institution information. In other words, this step adds roles to FactGrid like 'archbishop' and not 'archbishop of trier'
 #%% [markdown]
 #### Remove all missing (institution and diocese) entries **
@@ -376,13 +287,15 @@ create_institution_factgrid_df.sample(n = 5)
 #%%
 all_missing_entries = pl.concat([missing_inst_df, missing_dioc_df], how = "diagonal")
 
-dioc_joined_df = role_inst_dioc_df.remove(pl.col("id").is_in(all_missing_entries.get_column("id")))
+dioc_joined_df = wiag_offices_df.remove(pl.col("id").is_in(all_missing_entries.get_column("id").implode()))
 
-print("From originally " + str(role_inst_dioc_df.height) + " rows, " + str(dioc_joined_df.height) + " rows, that are not missing an institution or diocese, are left.")
+print("From originally " + str(wiag_offices_df.height) + " rows, " + str(dioc_joined_df.height) + " rows, that are not missing an institution or diocese, are left.")
 
 #%% [markdown]
 #### Check for special cases
+#
 ##### Check for roles with multiple entries in FactGrid
+#
 #Should the cell below print anything, these entries need to be **handled manually**, because they contain more than one entry on FactGrid. You can continue with the rest of the notebook even without taking care of these, because these entries will simply be ignored.
 
 #%%
@@ -392,7 +305,7 @@ wiag_roles_df.filter(pl.col("name").is_duplicated())
 ##### Check for missing roles in WIAG role table
 
 #%%
-missing_roles_wiag = dioc_joined_df.filter(pl.col("name").is_in(wiag_roles_df.get_column("name")).not_()).unique()
+missing_roles_wiag = dioc_joined_df.filter(pl.col("name").is_in(wiag_roles_df.get_column("name").implode()).not_()).unique()
 print(missing_roles_wiag.height)
 missing_roles_wiag.head()
 
@@ -402,11 +315,13 @@ missing_roles_wiag.head()
 #%%
 wiag_roles_df = wiag_roles_df.remove(pl.col("name").is_duplicated())
 
-joined_df = dioc_joined_df.join(wiag_roles_df.rename({'id' : 'role_id'}), on = "name", how = "left")
+joined_df = dioc_joined_df.join(wiag_roles_df.rename({'id' : 'role_id', 'factgrid_id': 'role_fg_id'}), on = "name", how = "left")
+
 
 #%% [markdown]
-##### Ignore all Kanonikatsbewerber and Vikariatsbewerber offices
-#TODO: add reason here
+##### Ignore all Kanonikatsbewerber and Vikariatsbewerber roles/offices
+#
+#The 'bewerber' suffix means, that this person was applying for this office, so these are not proper offices and don't need to be / shouldn't be added to FactGrid.
 
 #%%
 joined_df = joined_df.remove(pl.col('name').is_in(['Vikariatsbewerber', 'Kanonikatsbewerber']))
@@ -424,32 +339,53 @@ missing_roles
 
 #%% [markdown]
 #### Generate missing roles file
-#Creates a file with the name create-missing-roles_\<date\>.csv
-#**You need to fill in the empty columns of the file** (except qid) and then use the file on quickstatements. As mentioned above, you can either do this right away or at the end.
+#
+#In this step a file is prepared for the roles missing in FactGrid that can later be uploaded to add the roles to FG. Important things to note:
+#
+#1. The English labels for the roles are translations of the German labels. To facilitate the process of translating, a first draft of translations is generated using AI. However, the quality varies widly and it is **absolutely necessary** to check and correct the translations, since some will likely be incorrect.
+#2. The generated file also contains columns for descriptions. Either fill in the descriptions or if you do not intend to add any, you should remove these columns (with e.g. Excel or LibreOffice Calc). Should you want to add descriptions only for a few roles, it might still be easier to remove the columns and add the descriptions separately after the upload, depending on the number of roles to be uploaded (FactGrid does not allow empty cells for the csv format, so you need to add descriptions for every row or none at all)
+#
+#After checking/correcting the translations and adding descriptions or removing the columns, you can copy the content of the generated file (name: `create-missing-roles_<date>.csv`) and paste it into the textfield on quickstatements. As mentioned above, you can either do this right away or at the end.
+
+#%% [markdown]
+#This cell generates the translations of the labels. This can take a few minutes.
 
 #%%
-create_missing_roles_df = missing_roles.with_columns(
+system_prompt = """**Role:** You are a professional translator specializing in historical and religious terminology, with expertise in German–English translation.
+    **Task:** You will receive a German name for a role or occupation. Your task is to return the most accurate and context-appropriate English translation.
+    **Format:** Only return the translation. Do not add any remarks or formatting. Always start the translation with a capital letter."""
+    
+create_missing_roles_df = scripts.translate.translate(missing_roles.rename({"name" : "Lde"}), system_prompt)
+
+#%% [markdown]
+#this cell generates the file and show a sample of the content
+
+#%%
+create_missing_roles_df = create_missing_roles_df.with_columns(
     qid = None,
-    Len = None,
-    Lfr = None,
-    Les = None,
     Dde = None,
     Den = None,
     P2 = pl.lit("Q37073"),
     P131 = pl.lit("Q153178")
 ).rename({
-    "name" : "Lde",
     "role_id" : "item_id",
     "role_group_fq_id" : "P3"}
 ).select(
-    ["qid",	"Lde",	"Len",	"Lfr",	"Dde",	"Den",	"P2",	"P131",	"item_id",	"P3"]
+    ["qid",	"Lde",	"Len",	"Dde",	"Den",	"P2",	"P131",	"item_id",	"P3"]
 )
 
-create_missing_roles_df.write_csv(os.path.join(output_path, f"create-missing-roles_{today_string}.csv"), separator = ';')
-create_missing_roles_df
+create_missing_roles_df.write_csv(os.path.join(output_path, f"create-missing-roles_{today_string}.csv"))
+print(f'{create_missing_roles_df.height} rows were written. Here is a sample of them:')
+if create_missing_roles_df.height >= 3:
+    display(create_missing_roles_df.sample(n=3))
+else:
+    display(create_missing_roles_df)
+
 #%% [markdown]
 ### 7. Missing institution roles
+#
 #### Remove all missing (role) entries now **
+#
 #The code below removes all the entries that failed the join with the WIAG role join above.
 
 #%%
@@ -457,6 +393,7 @@ with_roles_in_fg_df = joined_df.remove(pl.col('role_fg_id').is_null())
 
 #%% [markdown]
 #### Check for people with missing FactGrid-entries or missing FactGrid-IDs in wiag
+#
 #There generally shouldn't be any such persons, since notebook 3 takes care of this.
 #%%
 missing_people_list = joined_df.filter(pl.col('FactGrid').is_null()).unique('person_id')
@@ -474,6 +411,7 @@ print(len(joined_df))
 
 #%% [markdown]
 #### Find out which institution roles are missing on FactGrid
+#
 #these roles have information of the institution as well
 
 #%%
@@ -525,8 +463,11 @@ print("Roles found:", len(data_dict), "duplicates:", len(dupl), "not found:", le
 
 #%% [markdown]
 #### Generate missing institution roles file
-#Creates a file with the name create-missing-inst-roles_\<date\>.csv
-#**You need to fill in the empty columns of the file** (except qid) and then use the file on quickstatements. As mentioned above, you can either do this right away or at the end.
+#
+#This step is mostly the same (some additional preprocessing steps) as for the roles (without institution). It is no less important though, to check and **correct the translations** of the labels.
+#
+#Once again you also need to either add descriptions (for all the rows) or remove the description columns. Afterwards you can copy the content of the generated file (name: `create-missing-inst-roles_<date>.csv`) and paste it into the textfield on quickstatements.
+
 #%%
 not_found_df = pl.DataFrame(not_found, orient = 'row', schema = ['role', 'institution', 'institution_id'])
 not_found_df = not_found_df.drop_nulls() # remove entries for diocese level roles 
@@ -538,18 +479,31 @@ not_found_df = not_found_df.unique()
 
 #add role details
 not_found_df = not_found_df.join(
-    wiag_roles_df.select('id', 'name', 'role_fg_id'), how='left', left_on='role', right_on='name'
+    wiag_roles_df.rename({'id' : 'role_id', 'factgrid_id': 'role_fg_id'}), how='left', left_on='role', right_on='name'
 )
 #add instution details
 not_found_df = not_found_df.join(factgrid_institution_df, how='left', left_on='institution_id', right_on='fg_gsn_id')
 
+#create label
+not_found_df = not_found_df.with_columns(Lde = pl.col('role') + ' ' + pl.col('institution'))
+
+#%% [markdown]
+#This cell generates the translations of the labels. This can take a few minutes.
+
+#%%
+system_prompt = """**Role:** You are a professional translator specializing in historical and religious terminology, with expertise in German–English translation.
+    **Task:** You will receive a German name for a role or occupation including a place that this role is associated with. Your task is to return the most accurate and context-appropriate English translation.
+    **Format:** Only return the translation. Do not add any remarks or formatting. Always start the translation with a capital letter."""
+
+create_miss_inst_roles = scripts.translate.translate(not_found_df.sample(n=3), system_prompt)
+
+#%% [markdown]
+#this cell generates the file and show a sample of the content
+
+#%%
 #add other columns
-not_found_df = not_found_df.with_columns(
+create_miss_inst_roles = create_miss_inst_roles.with_columns(
     qid = None,
-    Lde = pl.col('role') + ' ' + pl.col('institution'),
-    Len = None,
-    Lfr = None,
-    Les = None,
     Dde = None,
     Den = None,
     P2 = pl.lit('Q257052'),
@@ -557,17 +511,22 @@ not_found_df = not_found_df.with_columns(
     P3 = pl.col('role_fg_id'),
     P267 = pl.col('fg_institution_id'),
     # id is the number of the role in the role table in WIAG -- institution_id is the klosterdatenbank id of the institution
-    P1100 = pl.when(pl.col('id').is_null()).then(pl.lit(None)).otherwise('off' + pl.col('id').cast(str) + '_gsn' + pl.col('institution_id').cast(str))
+    P1100 = pl.when(pl.col('role_id').is_null()).then(pl.lit(None)).otherwise('off' + pl.col('role_id').cast(str) + '_gsn' + pl.col('institution_id').cast(str))
 ).select(['qid', 'Lde', 'Len', 'Dde', 'Den', 'P2', 'P131', 'P3', 'P267', 'P1100']) # selecting only relevant columns
 
 #export to csv file
-not_found_df.write_csv(os.path.join(output_path, f"create-missing-inst-roles_{today_string}.csv"), separator=';')
-print(f'{not_found_df.height} rows were written. A sample of them:')
-not_found_df.sample(n = 3)
+create_miss_inst_roles.write_csv(os.path.join(output_path, f"create-missing-inst-roles_{today_string}.csv"))
+print(f'{create_miss_inst_roles.height} rows were written. Here is a sample of them:')
+if create_miss_inst_roles.height >= 3:
+    display(create_miss_inst_roles.sample(n = 3))
+else:
+    display(create_miss_inst_roles)
 
 #%% [markdown]
 ### 8. Missing offices
+#
 #### Ignore all missing (inst role) entries now **
+#
 #The code below ignores entries that are generated above and does a join without them.
 
 #%%
@@ -577,15 +536,13 @@ final_joined_df.sample(n = 3)
 
 #%% [markdown]
 #### Parse dates
-# 
+#
 #The following code parses the date information present in the date_begin or date_end string and converts it to the correct property in FactGrid and it's corresponding value.
 #There are also testcases which are run in case you want to modify it.
-# 
 #Here is an overview of relevant FactGrid properties: [link](https://database.factgrid.de/query/embed.html#SELECT%20%3FPropertyLabel%20%3FProperty%20%3FPropertyDescription%20%3Freciprocal%20%3FreciprocalLabel%20%3Fexample%20%3Fuseful_statements%20%3Fwd%20WHERE%20%7B%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%20%20%3FProperty%20wdt%3AP8%20wd%3AQ77483.%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP364%20%3Fexample.%20%7D%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP86%20%3Freciprocal.%20%7D%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP343%20%3Fwd.%20%7D%0A%20%20OPTIONAL%20%7B%20%3FProperty%20wdt%3AP310%20%3Fuseful_statements.%20%7D%0A%7D%0AORDER%20BY%20%3FPropertyLabel)
 
 #%%
 #defining an enum to more clearly define what type of date is being passed 
-from enum import Enum
 class DateType(Enum):
     ONLY_DATE = 0
     BEGIN_DATE = 1
@@ -608,17 +565,17 @@ QUARTER_OF_A_CENTURY = 25
 TENTH_OF_A_CENTURY = 10
 
 ANTE_GROUP = "bis|vor|spätestens"
-POST_GROUP = "nach|frühestens|ab"
+POST_GROUP = "nach|frühestens|ab|zwischen" # NOTE: 'zwischen' does not actually fit into this group, but because the current strategy for 'zwischen 1087 und 1093' is to just take the first date with post quem, it makes sense to have it here
 CIRCA_GROUP = r"etwa|ca\.|um"
 #pre-compiling the most complex pattern to increase efficiency
 MOST_COMPLEX_PATTERN = re.compile(r'(wohl )?((kurz )?(' + ANTE_GROUP + '|' + POST_GROUP + r') )?((' + CIRCA_GROUP +r') )?(\d{3,4})(\?)?')
 
 #FactGrid properties:
-    # simple date properties:
+#simple date properties:
 DATE = 'P106' 
 BEGIN_DATE = 'P49'
 END_DATE = 'P50'
-    # when there is uncertainty / when all we know is the latest/earliest possible date:
+#when there is uncertainty / when all we know is the latest/earliest possible date:
 DATE_AFTER = 'P41' # the earliest possible date for something
 DATE_BEFORE = 'P43' # the latest possible date for something
 END_TERMINUS_ANTE_QUEM = 'P1123' # latest possible date of the end of a period
@@ -657,7 +614,6 @@ def format_datetime(entry: datetime, precision: int):
 #only_date=True means there is only one date, not a 'begin date' and an 'end date'
 def date_parsing(date_string: str, date_type: DateType):
     qualifier = ""
-    entry = None
     precision = PRECISION_CENTURY
 
     ante_property = (match := re.search(ANTE_GROUP, date_string))
@@ -691,7 +647,7 @@ def date_parsing(date_string: str, date_type: DateType):
             elif post_property:
                 return_property = END_TERMINUS_POST_QUEM
             else:
-                return_property = END_DATE    
+                return_property = END_DATE
         case _:
             assert False, "Unexpected DateType!"
         
@@ -699,16 +655,16 @@ def date_parsing(date_string: str, date_type: DateType):
 
     if date_string == '?':
         return tuple()
-            
-    if matches := re.match(r'(\d{1,2})\. ' + JH_GROUP, date_string):
-        centuries = int(matches.group(1))
-        entry = datetime(100 * (centuries), 1, 1)
     
+    # something like: 12. Jahrhundert
+    if matches := re.match(r'(\d{1,2})\. ' + JH_GROUP, date_string):
+        year = 100 * int(matches.group(1))
+    
+    # something like: 2. Hälfte des 12. Jahrhunderts
     elif matches := re.match(r'(\d)\. Hälfte (des )?(\d{1,2})\. ' + JHS_GROUP, date_string):
         half = int(matches.group(1)) - 1
         centuries = int(matches.group(3)) - 1
         year   = centuries * 100 + (half * 50) + QUARTER_OF_A_CENTURY
-        entry = datetime(year, 1, 1)
         qualifier = string_precision_qualifier_clause
     
     elif matches := re.match(r'(\w+) Viertel des (\d{1,2})\. ' + JHS_GROUP, date_string):
@@ -721,19 +677,16 @@ def date_parsing(date_string: str, date_type: DateType):
         quarter = matches.group(1)
         centuries = int(matches.group(2))
         year = (centuries - 1) * 100 + (number_map[quarter] * 25) + EIGTH_OF_A_CENTURY
-        entry = datetime(year, 1, 1)
         qualifier = string_precision_qualifier_clause
 
     elif matches := re.match(r'frühes (\d{1,2})\. ' + JH_GROUP, date_string):
         centuries = int(matches.group(1)) - 1
         year = centuries * 100 + TENTH_OF_A_CENTURY
-        entry = datetime(year, 1, 1)
         qualifier = string_precision_qualifier_clause
 
     elif matches := re.match(r'spätes (\d{1,2})\. ' + JH_GROUP, date_string):
         centuries = int(matches.group(1))
         year = centuries * 100 - TENTH_OF_A_CENTURY
-        entry = datetime(year, 1, 1)
         qualifier = string_precision_qualifier_clause
 
     elif matches := re.match(r'(Anfang|Mitte|Ende) (\d{1,2})\. ' + JH_GROUP, date_string):
@@ -745,28 +698,36 @@ def date_parsing(date_string: str, date_type: DateType):
         third = number_map[matches.group(1)]
         centuries = int(matches.group(2)) - 1
         year = centuries * 100 + (third * 33) + 17
-        entry = datetime(year, 1, 1)
         qualifier = string_precision_qualifier_clause
 
     elif matches := re.match(r'(\d{3,4})er Jahre', date_string):
-        entry = datetime(int(matches.group(1)), 1, 1)
+        year = int(matches.group(1))
         precision = PRECISION_DECADE
     
     elif matches := re.match(r'Wende zum (\d{1,2})\. ' + JH_GROUP, date_string):
         centuries = int(matches.group(1)) - 1
-        entry = datetime(centuries * 100 - 10, 1, 1)
+        year = centuries * 100 - 10
         qualifier = string_precision_qualifier_clause
 
     elif matches := re.match(r'Anfang der (\d{3,4})er Jahre', date_string):
-        entry = datetime(int(matches.group(1)), 1, 1)
+        year = int(matches.group(1))
         qualifier = string_precision_qualifier_clause
         precision = PRECISION_DECADE
 
+    # something like: (1140) 1145
     elif matches := re.match(r'\((\d{3,4})\s?\?\) (\d{3,4})', date_string):
-        entry = datetime(int(matches.group(2)), 1, 1) # ignoring the year in parantheses
+        year = int(matches.group(2)) # ignoring the year in parantheses
         precision = PRECISION_YEAR
         qualifier = string_precision_qualifier_clause
     
+    # something like: zwischen 1087 und 1093
+    elif matches := re.match(r'zwischen (\d{3,4}) und (\d{3,4})', date_string):
+        year = int(matches.group(1)) # ignoring the second year
+        precision = PRECISION_YEAR
+        qualifier = string_precision_qualifier_clause
+
+    # something like: 1140/1141
+    # or like: 1140/1152
     elif matches := re.match(r'(\d{3,4})/(\d{3,4})', date_string):
         year1 = int(matches.group(1))
         year2 = int(matches.group(2))
@@ -774,7 +735,10 @@ def date_parsing(date_string: str, date_type: DateType):
         if year2 - year1 == 1:
             # check for consecutive years
             qualifier = exact_precision_qualifier + '\t' + OR_FOLLOWING_YEAR
-        entry = datetime(year1, 1, 1)
+        else:
+            qualifier = string_precision_qualifier_clause
+            
+        year = year1
         precision = PRECISION_YEAR
 
     # this pattern is pre-compiled above, because it's rather complex and it's much more efficient to compile it just once, instead of on every function call
@@ -799,23 +763,27 @@ def date_parsing(date_string: str, date_type: DateType):
             # TODO is it correct, that on ? the other matches ('ca.' etc.) are ignored, because it's not exact enough?
             qualifier = string_precision_qualifier_clause
         
-        entry = datetime(int(matches.group(7)), 1, 1)
+        year = int(matches.group(7))
         precision = PRECISION_YEAR
 
     else:
         raise Exception(f"Couldn't parse date '{date_string}'")
-        
-    return (return_property, format_datetime(entry, precision), qualifier)
+
+    entry = datetime(year, 1, 1)
+    return (return_property, format_datetime(entry, precision), qualifier, date(year, 1, 1).isoformat())
+    #return (return_property, format_datetime(entry, precision), qualifier)
+
 #%% [markdown]
 ##### Test cases
+#
 #Because there are so many special cases, testing is a must to more clearly show what is expected for each case and make sure no incorrect changes are made.
-# %%
-#TODO why resolution of 7, 8 or 9?
 
-#still to be handled:
-    # "Ende 11. Jahrhundert/1. Viertel 12. Jahrhundert": "", TODO what date?
-    # "(996)" #TODO mistake or what does this mean?
+#%%
+#TODO still to be handled:
+    # nach 1177/vor 1305 -- maybe correct to "zwischen 1177 und 1305"?
+    # "(996)" -- mistake or what does this mean?
     # "12. oder 13. Jahrhundert"
+    # "Ende 11. Jahrhundert/1. Viertel 12. Jahrhundert"
     # "(vor 1254) 1256"
 
 begin_date_tests = {
@@ -846,7 +814,7 @@ begin_date_tests = {
     "Wende zum 12. Jh.": (BEGIN_DATE, '+1090-00-00T00:00:00Z/7/J', STRING_PRECISION_BEGIN_DATE + '\t"Wende zum 12. Jh."'),
     "Anfang der 1480er Jahre": (BEGIN_DATE, '+1480-00-00T00:00:00Z/8/J', STRING_PRECISION_BEGIN_DATE + '\t"Anfang der 1480er Jahre"'),
     "1164/1165": (BEGIN_DATE, '+1164-00-00T00:00:00Z/9/J', PRECISION_BEGIN_DATE + '\t' + OR_FOLLOWING_YEAR),
-    "1164/1177": (BEGIN_DATE, '+1164-00-00T00:00:00Z/9/J'),
+    "1164/1177": (BEGIN_DATE, '+1164-00-00T00:00:00Z/9/J', STRING_PRECISION_BEGIN_DATE + '\t"1164/1177"'),
     "(1014?) 1015": (BEGIN_DATE,"+1015-00-00T00:00:00Z/9/J", STRING_PRECISION_BEGIN_DATE + '\t"(1014?) 1015"'),
     "ab 1534": (BEGIN_TERMINUS_POST_QUEM, '+1534-00-00T00:00:00Z/9/J'),
     "nach 1230": (BEGIN_TERMINUS_POST_QUEM, '+1230-00-00T00:00:00Z/9/J'),
@@ -857,13 +825,15 @@ begin_date_tests = {
     "kurz vor 1200": (BEGIN_TERMINUS_ANTE_QUEM, '+1200-00-00T00:00:00Z/9/J', PRECISION_BEGIN_DATE + '\t' + SHORTLY_BEFORE), 
     "wohl etwa 1249": (BEGIN_DATE, '+1249-00-00T00:00:00Z/9/J', PRECISION_BEGIN_DATE + '\t' + LIKELY + '\t' + PRECISION_BEGIN_DATE + '\t' + CIRCA),
     "spätestens 1277": (BEGIN_TERMINUS_ANTE_QUEM, '+1277-00-00T00:00:00Z/9/J'),
-    #"zwischen 1087 und 1093": (BEGIN_TERMINUS_POST_QUEM,"+1087-00-00T00:00:00Z/9/J", STRING_PRECISION_BEGIN_DATE + '\t"zwischen 1087 und 1093"'), # TODO implement
+    "zwischen 1087 und 1093": (BEGIN_TERMINUS_POST_QUEM,"+1087-00-00T00:00:00Z/9/J", STRING_PRECISION_BEGIN_DATE + '\t"zwischen 1087 und 1093"'),
 }
 
 for key, value in begin_date_tests.items():
     retval = date_parsing(key, DateType.BEGIN_DATE)
     if len(retval[2]) == 0:
-        retval = (retval[0], retval[1])
+        retval = retval[0:2]
+    else:
+        retval = retval[0:3] # ignore the datetime object
     assert retval == value, f"{key}: Returned {retval} instead of {value}"
 
 end_date_tests = {
@@ -874,20 +844,22 @@ end_date_tests = {
     "um 1050": (END_DATE, "+1050-00-00T00:00:00Z/9/J", PRECISION_END_DATE + '\t' + CIRCA),
     "Anfang der 1480er Jahre": (END_DATE, '+1480-00-00T00:00:00Z/8/J', STRING_PRECISION_END_DATE + '\t"Anfang der 1480er Jahre"'),
     "1164/1165": (END_DATE, '+1164-00-00T00:00:00Z/9/J', PRECISION_END_DATE + '\t' + OR_FOLLOWING_YEAR),
-    "1164/1177": (END_DATE, '+1164-00-00T00:00:00Z/9/J'),
+    "1164/1177": (END_DATE, '+1164-00-00T00:00:00Z/9/J', STRING_PRECISION_END_DATE + '\t"1164/1177"'),
     "(1014?) 1015": (END_DATE,"+1015-00-00T00:00:00Z/9/J", STRING_PRECISION_END_DATE + '\t"(1014?) 1015"'),
     "ab 1534": (END_TERMINUS_POST_QUEM, '+1534-00-00T00:00:00Z/9/J'),
     "nach 1230": (END_TERMINUS_POST_QUEM, '+1230-00-00T00:00:00Z/9/J'),
     "frühestens 1342": (END_TERMINUS_POST_QUEM, '+1342-00-00T00:00:00Z/9/J'),
     "vor 1230": (END_TERMINUS_ANTE_QUEM, '+1230-00-00T00:00:00Z/9/J'),
     "wohl vor 1249": (END_TERMINUS_ANTE_QUEM, '+1249-00-00T00:00:00Z/9/J', PRECISION_END_DATE + '\t' + LIKELY),
-    # "zwischen 1087 und 1093": (BEGIN_TERMINUS_POST_QUEM,"+1087-00-00T00:00:00Z/9/J", STRING_PRECISION_END_DATE + '\t"zwischen 1087 und 1093"'), # TODO implement
+    "zwischen 1087 und 1093": (END_TERMINUS_POST_QUEM,"+1087-00-00T00:00:00Z/9/J", STRING_PRECISION_END_DATE + '\t"zwischen 1087 und 1093"'),
 }
 
 for key, value in end_date_tests.items():
     retval = date_parsing(key, DateType.END_DATE)
     if len(retval[2]) == 0:
-        retval = (retval[0], retval[1])
+        retval = retval[0:2]
+    else:
+        retval = retval[0:3] # ignore the datetime object
     assert retval == value, f"{key}: Returned {retval} instead of {value}"
 
 only_date_tests = {
@@ -898,133 +870,61 @@ only_date_tests = {
     "um 1050": (DATE, "+1050-00-00T00:00:00Z/9/J", PRECISION_DATE + '\t' + CIRCA),
     "Anfang der 1480er Jahre": (DATE, '+1480-00-00T00:00:00Z/8/J', NOTE + '\t"Anfang der 1480er Jahre"'),
     "1164/1165": (DATE, '+1164-00-00T00:00:00Z/9/J', PRECISION_DATE + '\t' + OR_FOLLOWING_YEAR),
-    "1164/1177": (DATE, '+1164-00-00T00:00:00Z/9/J'),
+    "1164/1177": (DATE, '+1164-00-00T00:00:00Z/9/J', NOTE + '\t"1164/1177"'),
     "(1014?) 1015": (DATE,"+1015-00-00T00:00:00Z/9/J", NOTE + '\t"(1014?) 1015"'),
     "ab 1534": (DATE_AFTER, '+1534-00-00T00:00:00Z/9/J'),
     "nach 1230": (DATE_AFTER, '+1230-00-00T00:00:00Z/9/J'),
     "frühestens 1342": (DATE_AFTER, '+1342-00-00T00:00:00Z/9/J'),
     "vor 1230": (DATE_BEFORE, '+1230-00-00T00:00:00Z/9/J'),
     "wohl vor 1249": (DATE_BEFORE, '+1249-00-00T00:00:00Z/9/J', PRECISION_DATE + '\t' + LIKELY),
-    # "zwischen 1087 und 1093": (DATE,"+1087-00-00T00:00:00Z/9/J", NOTE + '\t"zwischen 1087 und 1093"'), # TODO implement
+    "zwischen 1087 und 1093": (DATE_AFTER,"+1087-00-00T00:00:00Z/9/J", NOTE + '\t"zwischen 1087 und 1093"'),
 }
 
 for key, value in only_date_tests.items():
     retval = date_parsing(key, DateType.ONLY_DATE)
     if len(retval[2]) == 0:
-        retval = (retval[0], retval[1])
+        retval = retval[0:2]
+    else:
+        retval = retval[0:3] # ignore the datetime object
     assert retval == value, f"{key}: Returned {retval} instead of {value}"
 
 #%% [markdown]
-#### Reconcile office data with FactGrid
-#The data that should be in FactGrid:
-#%%
-final_joined_df.head() 
-
-#%% [markdown]
-#And now we check what is already in FactGrid so we only export QuickStatements for new things. This makes it much easier to see afterwards what was changed when e.g. the notebook was run the last time.
-#%%
-qIDs = final_joined_df.with_columns(query_qID= "(wd:" + pl.col('FactGrid') + ')').get_column("query_qID").unique().sort()
-
-#up to 325 worked, so 300 should be relatively safe, even if a dataset contains only long qIDs
-CHUNK_SIZE = 300
-entries_processed = 0
-factgrid_roles_for_qIDs = pl.DataFrame()
-
-while entries_processed < qIDs.len():
-  qID_string = qIDs.slice(offset = entries_processed, length = CHUNK_SIZE).str.join(delimiter = ' ')[0]
-
-  # very helpful resource for building this query: https://en.wikibooks.org/wiki/SPARQL/WIKIDATA_Qualifiers,_References_and_Ranks
-  query = (
-  """
-  SELECT ?person_id ?career_statement ?date ?begin_date ?end_date ?date_after ?date_before ?end_terminus_ante_quem ?begin_terminus_ante_quem ?end_terminus_post_quem ?begin_terminus_post_quem ?precision_date ?precision_begin_date ?precision_end_date ?string_precision_begin_date ?string_precision_end_date ?note ?source WHERE {
-    VALUES (?person_id) {
-  """
-  + qID_string
-  +
-  """
-    }
-    ?person_id p:P165 ?statement.
-    ?statement ps:P165 ?career_statement.
-    
-    # different types of dates
-    OPTIONAL{?statement pq:P106 ?date.}
-    OPTIONAL{?statement pq:P49 ?begin_date.}
-    OPTIONAL{?statement pq:P50 ?end_date.}
-    OPTIONAL{?statement pq:P41 ?date_after.}
-    OPTIONAL{?statement pq:P43 ?date_before.}
-    OPTIONAL{?statement pq:P1123 ?end_terminus_ante_quem.}
-    OPTIONAL{?statement pq:P1124 ?begin_terminus_ante_quem.}
-    OPTIONAL{?statement pq:P1125 ?end_terminus_post_quem.}
-    OPTIONAL{?statement pq:P1126 ?begin_terminus_post_quem.}
-    
-    #qualifiers of dates
-    OPTIONAL{?statement pq:467 ?precision_date.}
-    OPTIONAL{?statement pq:P785 ?precision_begin_date.}
-    OPTIONAL{?statement pq:P786 ?precision_end_date.}
-    OPTIONAL{?statement pq:P787 ?string_precision_begin_date.}
-    OPTIONAL{?statement pq:P788 ?string_precision_end_date.}
-    OPTIONAL{?statement pq:P73 ?note.}
-    
-    # the source (generally a WIAG-ID)
-    OPTIONAL{?statement prov:wasDerivedFrom ?refnode.
-            ?refnode pr:P601 ?source.}
-  }
-  """
-  )
-
-
-  # make request: 
-  url = 'https://database.factgrid.de/sparql'
-  r = requests.get(url, params={'query': query}, headers={"Accept": "application/json"})
-
-  # should there be an error, explicitly raise it, so it doesn't look as if there was a problem decoding the json response
-  r.raise_for_status()
-
-  data = r.json()
-  temp_df = pl.json_normalize(data['results']['bindings'])
-
-  # define what columns the dataframe should have
-  total_columns_list = ['person_id.value', 'career_statement.value', 'date.value', 'begin_date.value', 'end_date.value', 'date_after.value', 'date_before.value', 'end_terminus_ante_quem.value', 'begin_terminus_ante_quem.value', 'end_terminus_post_quem.value', 'begin_terminus_post_quem.value', 'precision_date.value', 'precision_begin_date.value', 'precision_end_date.value', 'string_precision_begin_date.value', 'string_precision_end_date.value', 'note.value', 'source.value']
-
-  # extract values
-  for column in temp_df.columns:
-      if column.endswith(".value"):
-          temp_df = extract_id(temp_df, column)
-
-          # filter for columns not in the dataframe
-          total_columns_list.remove(column)
-
-  # add columns that are missing (because the query did not return any values for that column) - this is necessary for merging the dataframes
-  for column in total_columns_list:
-      temp_df = temp_df.with_columns(pl.lit(None).cast(pl.String).alias(column))
-
-  # select only relevant columns and rename them at the same time
-  temp_df = temp_df.select(qID = 'person_id.value', role = 'career_statement.value', date = 'date.value', begin_date = 'begin_date.value', end_date = 'end_date.value', date_after = 'date_after.value', date_before = 'date_before.value', end_terminus_ante_quem = 'end_terminus_ante_quem.value', begin_terminus_ante_quem = 'begin_terminus_ante_quem.value', end_terminus_post_quem = 'end_terminus_post_quem.value', begin_terminus_post_quem = 'begin_terminus_post_quem.value', precision_date = 'precision_date.value', precision_begin_date = 'precision_begin_date.value', precision_end_date = 'precision_end_date.value', string_precision_begin_date = 'string_precision_begin_date.value', string_precision_end_date = 'string_precision_end_date.value', note = 'note.value', source = 'source.value')
-
-  # sort by qID - relevant for merging
-  temp_df = temp_df.sort('qID')
-
-  if factgrid_roles_for_qIDs.is_empty():
-    factgrid_roles_for_qIDs = temp_df
-  else:
-    factgrid_roles_for_qIDs.merge_sorted(other = temp_df, key = 'qID')
-
-  entries_processed += CHUNK_SIZE  
+#How a date is parsed depends on whether it's the only date or not (begin and end date), so the below function handles this.
 
 #%%
-j_df = final_joined_df.join(other = factgrid_roles_for_qIDs, left_on = ["FactGrid", "fg_inst_role_id"], right_on = ["qID", "role"]) #, validate = "1:m") it's not 1:m, which makes sense when there are multiple entries for one inst role 
-j_df.sample(n = 5)
-# TODO now that we have only rows which contain an office for a person that already has some kind of entry regarding the relevant inst role, check whether the dates match up
-# if the dates match up, disregard the row -- if they are completely separate, the row should prob be uploaded -- if they somehow overlap, manual checking seems necessary
-# also check that the source matches with the person_id
+def parse_both_dates(d: dict):
+    try:
+        date_begin = d["date_begin"]
+        date_end = d["date_end"]
 
-# also upload the other rows which have no relevant inst role on FG yet. Does this work? final_joined_df.join(other = factgrid_roles_for_qIDs, left_on = ["FactGrid", "fg_inst_role_id"], right_on = ["qID", "role"], how = "anti")
+        if date_begin != None:
+            if date_end != None:
+                begin = date_parsing(date_begin, DateType.BEGIN_DATE)
+                end = date_parsing(date_end, DateType.END_DATE)
+            
+                date_clauses = {"begin": begin, "end" : end}
+            else:
+                date_clauses = {"begin": date_parsing(date_begin, DateType.ONLY_DATE), "end" : None}
+        else:
+            if date_end != None:
+                date_clauses = {"begin": None, "end" : date_parsing(date_end, DateType.ONLY_DATE)}
+            else:
+                # do nothing, since nothing needs to be parsed
+                date_clauses = {"begin": None, "end" : None}
+
+        return date_clauses
+    except Exception as e:
+        print(traceback.format_exc())
+        print(row)
+        print('\n')
+        return {"begin": None, "end" : None}
+
 #%% [markdown]
 #### Generate missing offices file
+#
 #The code below creates the office entries to be uploaded on factgrid.
-#If the date parsing fails, the corresponding date string is printed out and along with the entry.
-# 
-#When the parsing fails, sometimes the date parsing defined above needs to be extended to handle cases that haven't been handled until now and sometimes entries in WIAG need to be corrected.
+#
+#If the date parsing function can't handle a date (either because that format hasn't been encountered yet or because the entry is nonsense), it prints the problematic date and the corresponding entry from the dataframe. If the relevant rows contain some nonsense data, use this output to find and fix it. If the data is not nonsense, most likely the date_parsing function above needs to be extended. For this, you probably want to contact whoever is responsible for maintaining the sync_notebooks.
 
 #%%
 filepath = os.path.join(output_path, f'quickstatements-offices_{today_string}.qs')
