@@ -495,7 +495,7 @@ system_prompt = """**Role:** You are a professional translator specializing in h
     **Task:** You will receive a German name for a role or occupation including a place that this role is associated with. Your task is to return the most accurate and context-appropriate English translation.
     **Format:** Only return the translation. Do not add any remarks or formatting. Always start the translation with a capital letter."""
 
-create_miss_inst_roles = scripts.translate.translate(not_found_df.sample(n=3), system_prompt)
+create_miss_inst_roles = scripts.translate.translate(not_found_df, system_prompt)
 
 #%% [markdown]
 #this cell generates the file and show a sample of the content
