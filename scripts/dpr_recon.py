@@ -118,8 +118,8 @@ with open(os.path.join(output_path, f'update_dpr_{today_string}.sql'), 'w') as f
     file.write(query)
 #%% [markdown]
 #### Upload the file
-#Once the file has been generated, please open [phpMyAdmin DPr](https://personendatenbank.germania-sacra.de/phpmyadmin/) and run the SQL file there. First you need to select the database (gso) and then either:
+#Once the file has been generated (name is `update_dpr_something.sql`), **check the file** (do the updates make sense?) and then please open [phpMyAdmin DPr](https://personendatenbank.germania-sacra.de/phpmyadmin/) and run the SQL file there. First you need to select the database (gso) and then either:
 # - go to the Import tab -> select the file -> click 'Ok' to run it
 # - go to the SQL tab -> copy the contents of the file and paste them into the interface -> click 'Ok' to run it
 #### Next notebook
-#Once the update is done, you can continue with [notebook 2](fg_wiag_recon.ipynb) (fg_wiag_recon).
+#Once the update is done, you can continue with [notebook 2](fg_wiag_ids.ipynb) (fg_wiag_ids).
