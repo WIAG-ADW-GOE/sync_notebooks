@@ -2,9 +2,9 @@
 
 The Jupyter Notebooks contained in this repository are designed to synchronize data between three databases:
 
-- **Digitales Personenregister (DPr)**: The primary source of data containing persons from books produced by Germania Sacra.
-- **WIAG**: A local MySQL database with an API.
-- **FactGrid (FG)**: A Wikidata-based site for historians.
+- **[Digitales Personenregister (DPr)](https://personendatenbank.germania-sacra.de/)**: The primary source of data containing persons from books produced by Germania Sacra.
+- **[WIAG](https://wiag-vocab.adw-goe.de/)**: A local MySQL database with an API.
+- **[FactGrid (FG)](https://database.factgrid.de/wiki/Main_Page)**: A Wikidata-based site for historians.
 
 This guide is intended for team members at Germania Sacra who are domain experts in historical texts but may be missing technical expertise.
 
