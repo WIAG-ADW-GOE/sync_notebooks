@@ -1,8 +1,8 @@
 #%% [markdown]
 ## 2. Update WIAG-IDs in FactGrid and then add FG-IDs in WIAG
-# 
+#
 #The code is designed to synchronize identification numbers (IDs) between a local database (WIAG) and an online database called FactGrid. Here's a detailed explanation:
-# 
+#
 #1. Load local data: The program reads a local spreadsheet that contains personal information and their corresponding IDs.
 #2. Retrieve online data: It connects to the FactGrid online database to fetch the current IDs associated with the same individuals.
 #3. Identify discrepancies: The code compares the local IDs with the online IDs to find any differences or mismatches.
@@ -18,7 +18,7 @@
 ### 1. Import local (WIAG) data
 #
 #### Export Csv Personendaten
-# 
+#
 # - Go to https://wiag-vocab.adw-goe.de/query/can
 # - Click on the Export button and then on CSV Personendaten
 # - This will start downloading the data.
@@ -77,7 +77,7 @@ fg_wiag_ids_df.columns = ['fg_id', 'fg_wiag_id']
 
 #%% [markdown]
 ### 3. Check for problematic entries
-#These need to be **fixed manually** before starting again by exporting the data (step 1).
+#For this section: Should any entries be listed, these need to be **fixed manually** before starting again by exporting the data (step 1).
 #
 #This checks whether any FactGrid-entries link to multiple WIAG-IDs and lists them.
 #%%
@@ -100,48 +100,41 @@ fg_missing_wiag_id = outer_df[~outer_df['wiag_fg_id'].isna() & outer_df['fg_id']
 fg_missing_wiag_id[['wiag_id', 'wiag_fg_id']]
 #%% [markdown]
 ### 4. Find entries to update
-#### Check all WIAG-IDs that FactGrid-entries link to
-#In case your repository (sync_notebooks) folder is **not** located under the path `path_to_repository`, change the variable below to where the folder is located.
-#%%
-path_to_repository = r"C:\Users\Public"
-#%% [markdown]
+#This section finds entries to update by first checking all WIAG-IDs linked to from FG-entries (section A) and then (section B) checking FG-IDs that WIAG-entries link to.
+#### a) Check all WIAG-IDs that FactGrid-entries link to
+#This section finds entries to update by checking WIAG-IDs that are referenced in FactGrid.
 #Please note, that the code cell below can take **up to 10 minutes.** Should the cell fail, try running it again (likely cause is a timeout).
-#The cell automatically checks for entries to update by checking WIAG-IDs that are referenced in FactGrid.
-#%%
-path_to_function_scripts = path_to_repository + r"\sync_notebooks\scripts\fg_wiag_ids_functions.py"
-#This runs the python script located under the given path to define two needed functions (one is the main function called below).
-%run $path_to_function_scripts
 
-counter = 0
+#%%
+from scripts.fg_wiag_ids_functions import check_fg
+
 #creates a list with the WIAG-ID and FactGrid-ID paired for each entry 
-still_missing_entries = list(zip(list(fg_wiag_ids_df['fg_wiag_id']), list(fg_wiag_ids_df['fg_id'])))
+entries_to_be_checked = list(zip(list(fg_wiag_ids_df['fg_wiag_id']), list(fg_wiag_ids_df['fg_id'])))
 
-while still_missing_entries:
-    counter += 1
-    print(f"Starting attempt #{counter}")
-    still_missing_entries = await main(still_missing_entries) # final output from the main() function works via the global variables entries_to_be_updated, wiag_different_fgID and wiag_missing_fgID
+#description of the outputs of the check_fg function:
+#entries_to_be_updated: FactGrid-IDs which point to an outdated WIAG-ID (WIAG redirected to a newer one) and for which the new WIAG entry does not point to the FactGrid-ID
+#wiag_different_fgID: WIAG-IDs that link to a different FG-ID from the one that points to them
+#wiag_missing_fgID: WIAG-IDs to which a FactGrid-entry points, but which point to no FactGrid-ID
 
-additional_updates_df = pd.DataFrame(entries_to_be_updated) # FactGrid-IDs which point to an outdated WIAG-ID (WIAG redirected to a newer one) and for which the WIAG entry does not point to the FactGrid-ID
-#updating the WIAG entry with the FactGrid-ID happens in step 4
-different_fgID_df = pd.DataFrame(wiag_different_fgID, columns = ["fg_wiag_id", "wiag_redirected", "fg_id", "wiag_fg_id"])
-missing_fgID_df = pd.DataFrame(wiag_missing_fgID, columns=["fg_wiag_id", "fg_id"]) # WIAG-IDs to whom a FactGrid-entry points, but which point to no FactGrid-ID
+entries_to_be_updated, wiag_different_fgID, wiag_missing_fgID = await check_fg(entries_to_be_checked)
+
 #%% [markdown]
-#One more check needs to be done before updates can be performed.
-#If the cell below lists any entries, these entries **needs to be fixed manually**. If in doubt, ask Barbara Kroeger!
-#After fixing any entries, you need to **start again** from step 1, to make sure all problems have been fixed and no updates are incorrectly done because of incorrect data.
-#The following WIAG-entries link to FactGrid-entries, but the FG-entries don't link back, but instead link to a different WIAG-entry.
+#If the cell below lists any entries, these entries **needs to be fixed manually**. After fixing entries, you need to **start again** from step 1!
+#The listed WIAG-entries link to FactGrid-entries, but the FG-entries don't link back, but instead link to a different WIAG-entry.
 #%%
-different_fgID_df
+wiag_different_fgID
+
 #%% [markdown]
-#The following entries point to outdated WIAG-IDs and will be updated automatically. You should **check a sample** of the output and also make sure that the amount of entries isn't absurdly high. If no entries are to be updated, no output will be generated.
+#The following entries point to outdated WIAG-IDs and will be updated automatically. You should **check a sample** of the output and also make sure that the amount of entries isn't absurdly high.
+#Should there be no output, that means that no entries to be updated were found.
 #%%
-if len(entries_to_be_updated) > 0: # not setting the column names when the dataframe is empty, because this produces an error
-    _to_be_updated_df = pd.DataFrame(entries_to_be_updated)
-    _to_be_updated_df.columns = ["fg_id", "fg_wiag_id", "new_wiag_id"]
-    _to_be_updated_df
+pd.DataFrame(entries_to_be_updated, columns = ["fg_id", "fg_wiag_id", "new_wiag_id"])
+
 #%% [markdown]
-#### Check FactGrid-IDs that WIAG-entries point to
-#Once again using the data imported at the beginning, entries are found that also need to be updated.
+#### b) Check FactGrid-IDs that WIAG-entries point to
+#This checks for FactGrid-entries, where a WIAG entry is linking to them, but the FG-entry links to a different WIAG-entry.
+#The output **needs to be checked fully** (if there is any). The expected solution (which will be carried out automatically) is to update the FactGrid-entry with the listed WIAG-ID, however it's a good idea to check whether this makes sense for all entries.
+
 #%%
 #merge dataframes (inner join on FactGrid-ID)
 merged_df = fg_wiag_ids_df.merge(wiag_persons_df, left_on='fg_id', right_on = 'wiag_fg_id')
@@ -149,10 +142,7 @@ merged_df = fg_wiag_ids_df.merge(wiag_persons_df, left_on='fg_id', right_on = 'w
 #check for entries where the WIAG-ID in FactGrid is different from the one in WIAG
 fg_diff_wiag_id = merged_df[merged_df['fg_wiag_id'] != merged_df['wiag_id']]
 fg_diff_wiag_id = fg_diff_wiag_id[['fg_id', 'fg_wiag_id', 'wiag_id']] # selecting columns - no need to show the same FG-ID twice
-#%% [markdown]
-#The output of the following code block **needs to be checked fully** (if there is any). For all listed FactGrid IDs a WIAG entry is linking to them but the corresponding FactGrid-entry links to a different WIAG entry. The expected solution (which will be carried out automatically) is to update the FactGrid-entry with the listed WIAG-ID, however it's a good idea to manually check this, even though all weird data constellations should have been filtered out before this step.
 
-#%%
 fg_diff_wiag_id
 #%% [markdown]
 ### 5. Update FactGrid
@@ -162,10 +152,10 @@ fg_diff_wiag_id
 #List the entries in a format that FactGrid understands. (used for updating FactGrid automatically)
 fg_qs_csv = fg_diff_wiag_id
 fg_qs_csv.columns = ['qid', '-P601', 'P601']
-fg_qs_csv = fg_qs_csv.set_index('qid')
+#fg_qs_csv = fg_qs_csv.set_index('qid')
 
 #add the updates from the first half of step 4
-final_fg_qs_csv = pd.concat([fg_qs_csv, additional_updates_df], ignore_index=True)
+final_fg_qs_csv = pd.concat([fg_qs_csv, entries_to_be_updated])# , ignore_index=True) TODO necessary?
 final_fg_qs_csv # list some entries
 #%% [markdown]
 #### Generate update-file
@@ -234,6 +224,8 @@ outer_df[['wiag_id', 'wiag_fg_id']]
 #%% [markdown]
 ### 8. Find entries to update in WIAG
 #For the following list, the FactGrid-entry is linking to the WIAG-entry, but the WIAG-entry links to no the FG-entry. These entries will be updated automatically to link back. You should **check a sample** and make sure the number of updates is not absurdly high (greater than 500).
+#Should no entries be listed, this means that no update needs to be performed. In this case you should skip the rest of the notebook and go straight to [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create).
+
 #%%
 #merge dataframes - reusing WIAG-dataframe from step 1
 new_merged_df = fg_wiag_ids_df.merge(wiag_persons_df, left_on = 'fg_wiag_id', right_on='wiag_id')
@@ -245,10 +237,13 @@ to_be_updated_df = to_be_updated_df[['fg_id', 'wiag_id']]
 to_be_updated_df
 #%% [markdown]
 #Exporting the list to a CSV-file, so the entirety of proposed updates can be checked easily. Change the `output path` if you want the file to be saved to somewhere else.
+
+#%%
+output_path = r"C:\Users\Public\sync_notebooks\output_files"
+
 #%%
 from datetime import datetime
 
-output_path = r"C:\Users\Public\sync_notebooks\output_files"
 today_string = datetime.now().strftime('%Y-%m-%d')
 
 to_be_updated_df.to_csv( # generate csv file

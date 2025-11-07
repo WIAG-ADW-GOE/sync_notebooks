@@ -7,6 +7,7 @@ import copy
 import pandas as pd
 import traceback
 
+BATCH_SIZE = 3000
 missed = [] # entries for whom content could not be retrieved because of some error
 entries_to_be_updated = [] # FactGrid-IDs which point to an outdated WIAG-ID (WIAG redirected to a newer one) and for which the new WIAG entry does not point to the FactGrid-ID
 wiag_different_fgID = [] # WIAG-IDs that link to a different FG-ID from the one that points to them
@@ -48,34 +49,46 @@ async def get(fg_wiag_id, fg_id, session):
         print(f"And traceback:\n {traceback.format_exc()}")
         
 # main executes the get function for the list of entries in batches
-async def main(entries_to_be_checked):
+async def check_fg(entries_to_be_checked: list) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     global missed
-    number_of_entries_to_be_checked = len(entries_to_be_checked)
-    
-    missed = [] # resettting missed before each attempt
+    counter = 0
 
-    # entries_to_be_checked is a list of a zip of two lists (pairing WIAG-ID and FactGrid-ID for each entry)
-    async with aiohttp.ClientSession() as session:
-        chunk_size = 1_000
-        for i in range(0, number_of_entries_to_be_checked, chunk_size):
-            try:
-                # defining the batch and unpacking entry into WIAG-ID and FactGrid-ID
-                _entries_to_be_checked_batch = (get(*entry, session) for entry in entries_to_be_checked[i : i + chunk_size])
-                await asyncio.gather(*_entries_to_be_checked_batch) # concurrent execution of the get function for the batch
-                if(i + chunk_size <= number_of_entries_to_be_checked):
-                    print(f"{i + chunk_size}/{number_of_entries_to_be_checked} checked. Missed count: {len(missed)}")
-                else:
-                    print(f"{number_of_entries_to_be_checked}/{number_of_entries_to_be_checked} checked. Missed count: {len(missed)}")
-                time.sleep(1)
-            except ssl.SSLError as e:
-                i = i - 1
-                print(f"Retrying last batch")
-    if(len(missed) > 0):
-        print(f"Finalized all. Couldn't get data for {len(missed)} entries")
-    else:
-        print(f"Finalized all. Finished fetching data for all entries.")
+    while entries_to_be_checked:
+        missed = [] # resettting missed before each attempt
+        counter += 1
+        print(f"Starting attempt #{counter}")
+
+        number_of_entries_to_be_checked = len(entries_to_be_checked)
+
+        # entries_to_be_checked is a list of a zip of two lists (pairing WIAG-ID and FactGrid-ID for each entry)
+        async with aiohttp.ClientSession() as session:
+            
+            for i in range(0, number_of_entries_to_be_checked, BATCH_SIZE):
+                try:
+                    # defining the batch and unpacking entry into WIAG-ID and FactGrid-ID
+                    _entries_to_be_checked_batch = (get(*entry, session) for entry in entries_to_be_checked[i : i + BATCH_SIZE])
+                    await asyncio.gather(*_entries_to_be_checked_batch) # concurrent execution of the get function for the batch
+                    if(i + BATCH_SIZE <= number_of_entries_to_be_checked):
+                        print(f"{i + BATCH_SIZE}/{number_of_entries_to_be_checked} checked. Missed count: {len(missed)}")
+                    else:
+                        print(f"{number_of_entries_to_be_checked}/{number_of_entries_to_be_checked} checked. Missed count: {len(missed)}")
+                    time.sleep(1)
+                except ssl.SSLError as e:
+                    i = i - 1
+                    print(f"Retrying last batch")
+        if(len(missed) > 0):
+            print(f"Finalized all. Couldn't get data for {len(missed)} entries")
+        else:
+            print(f"Finalized all. Finished fetching data for all entries.")
+        
+        entries_to_be_checked = missed
     
-    return missed
+    entries_update = pd.DataFrame(entries_to_be_updated, columns=["qid", "-P601","P601"])
+    different_fgID = pd.DataFrame(wiag_different_fgID, columns = ["fg_wiag_id", "wiag_redirected", "fg_id", "wiag_fg_id"])
+    missing_fgID = pd.DataFrame(wiag_missing_fgID, columns=["fg_wiag_id", "fg_id"])
+
+    return entries_update, different_fgID, missing_fgID
+
 
 
 
