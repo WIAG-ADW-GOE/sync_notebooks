@@ -396,7 +396,7 @@ with_roles_in_fg_df = joined_df.remove(pl.col('role_fg_id').is_null())
 #
 #There generally shouldn't be any such persons, since notebook 3 takes care of this.
 #%%
-missing_people_list = joined_df.filter(pl.col('FactGrid').is_null()).unique('person_id')
+missing_people_list = with_roles_in_fg_df.filter(pl.col('FactGrid').is_null()).unique('person_id')
 print(missing_people_list.height)
 if missing_people_list.height >= 3:
     missing_people_list.sample(n = 3)
@@ -406,9 +406,9 @@ if missing_people_list.height >= 3:
 #The code below removes all the entries for persons that don't exist on FactGrid
 
 #%%
-print(len(joined_df))
-joined_df = joined_df.filter(pl.col('FactGrid').is_not_null())
-print(len(joined_df))
+print(len(with_roles_in_fg_df))
+with_roles_in_fg_df = with_roles_in_fg_df.filter(pl.col('FactGrid').is_not_null())
+print(len(with_roles_in_fg_df))
 
 #%% [markdown]
 #### Find out which institution roles are missing on FactGrid
@@ -442,7 +442,7 @@ not_found = [] # used for creating institution roles (e.g. bishop of ...) in the
 dupl = {} # these entries are ignored, because they need to be fixed manually
 
 i = 0
-for (id, name, inst, inst_id, dioc) in joined_df.select('id', 'name', 'institution', 'institution_id', 'diocese').iter_rows():
+for (id, name, inst, inst_id, dioc) in with_roles_in_fg_df.select('id', 'name', 'institution', 'institution_id', 'diocese').iter_rows():
     # Kardinal receives insitution role Q254893 manually -- probably simply handling a simple special case first
     if name == "Kardinal":
         data_dict.append((id,"Q254893"))
@@ -514,7 +514,7 @@ create_miss_inst_roles = create_miss_inst_roles.with_columns(
     P3 = pl.col('role_fg_id'),
     P267 = pl.col('fg_institution_id'),
     # id is the number of the role in the role table in WIAG -- institution_id is the klosterdatenbank id of the institution
-    P1100 = pl.when(pl.col('role_id').is_null()).then(pl.lit(None)).otherwise('off' + pl.col('role_id').cast(str) + '_gsn' + pl.col('institution_id').cast(str))
+    P1100 = '"off' + pl.col('role_id').cast(str) + '_gsn' + pl.col('institution_id').cast(str) + '"'
 ).select(['qid', 'Lde', 'Len', 'Dde', 'Den', 'P2', 'P131', 'P3', 'P267', 'P1100']) # selecting only relevant columns
 
 #export to csv file
@@ -533,7 +533,7 @@ else:
 #The code below ignores entries that are generated above and does a join without them.
 
 #%%
-final_joined_df = joined_df.join(pl.DataFrame(data_dict, schema = ['id', 'fg_inst_role_id'], orient = 'row'), on = 'id')
+final_joined_df = with_roles_in_fg_df.join(pl.DataFrame(data_dict, schema = ['id', 'fg_inst_role_id'], orient = 'row'), on = 'id')
 print(len(final_joined_df))
 final_joined_df.sample(n = 3)
 
