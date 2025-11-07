@@ -324,7 +324,7 @@ joined_df = dioc_joined_df.join(wiag_roles_df.rename({'id' : 'role_id', 'factgri
 #The 'bewerber' suffix means, that this person was applying for this office, so these are not proper offices and don't need to be / shouldn't be added to FactGrid.
 
 #%%
-joined_df = joined_df.remove(pl.col('name').is_in(['Vikariatsbewerber', 'Kanonikatsbewerber']))
+joined_df = joined_df.remove(pl.col('name').is_in(['Vikariatsbewerber', 'Kanonikatsbewerber', 'Domherr, Anwärter']))
 
 #%% [markdown]
 ##### Entries with missing FactGrid-entries for the roles in wiag
@@ -460,7 +460,9 @@ for (id, name, inst, inst_id, dioc) in with_roles_in_fg_df.select('id', 'name', 
     
     i += 1
 
-print("Roles found:", len(data_dict), "duplicates:", len(dupl), "not found:", len(not_found))
+factgrid_inst_roles = pl.DataFrame(data_dict, schema = ['id', 'fg_inst_role_id'], orient = 'row')
+
+print("Roles found:", factgrid_inst_roles.height, "duplicates:", len(dupl), "not found:", len(not_found))
 
 #%% [markdown]
 #### Generate missing institution roles file
@@ -533,7 +535,7 @@ else:
 #The code below ignores entries that are generated above and does a join without them.
 
 #%%
-final_joined_df = with_roles_in_fg_df.join(pl.DataFrame(data_dict, schema = ['id', 'fg_inst_role_id'], orient = 'row'), on = 'id')
+final_joined_df = with_roles_in_fg_df.join(factgrid_inst_roles, on = 'id')
 print(len(final_joined_df))
 final_joined_df.sample(n = 3)
 
