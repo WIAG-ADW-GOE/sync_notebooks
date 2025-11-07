@@ -18,7 +18,7 @@ def drop_type_columns(df):
 
 
 def load_fg_data():
-    # load institution data
+    # load institutions (items with a Klosterdatenbank-ID)
     query = (
         """SELECT ?item ?gsn WHERE {
     ?item wdt:P471 ?gsn
@@ -31,7 +31,7 @@ def load_fg_data():
     institution_df = pl.json_normalize(data['results']['bindings'])
     institution_df = institution_df.cast({'gsn.value':pl.UInt32})
 
-    # load diocese data
+    # load dioceses (items that are an instance or subclass of a diocese)
     query = (
     """
     SELECT DISTINCT ?item ?wiagid ?label ?alternative WHERE {
@@ -50,7 +50,7 @@ def load_fg_data():
     data = r.json()
     diocese_df = pl.json_normalize(data['results']['bindings'])
 
-    # load institution role data
+    # load institution roles (any item that is a "Career statement that captures a sequence of incumbents")
     query = (
     """
     SELECT ?item ?label WHERE {

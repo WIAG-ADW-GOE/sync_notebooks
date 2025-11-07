@@ -63,7 +63,7 @@ output_path = r"C:\Users\Public\sync_notebooks\output_files"
 #%%
 input_file = f'role.csv'
 input_path_file = os.path.join(input_path, input_file)
-wiag_roles_df = pl.read_csv(input_path_file)
+wiag_roles_df = pl.read_csv(input_path_file, null_values="NULL")
 len(wiag_roles_df)
 
 #%% [markdown]
@@ -110,9 +110,9 @@ assert last_modified.day == now.day and last_modified.month == now.month, f'The 
 #%% [markdown]
 ### 3. Download data from FactGrid
 #
-#
-#
 #Troubleshooting: If the following cell throws an error, try rerunning the cell. Its probably just a connection problem.
+#
+#This cell downloads institutions (items with a Klosterdatenbank-ID), institution roles (items of type Q257052) and dioceses (items that are a diocese or a subclass of diocese) from FactGrid.
 
 #%%
 from scripts.wiag_to_factgrid_functions import load_fg_data
@@ -398,7 +398,8 @@ with_roles_in_fg_df = joined_df.remove(pl.col('role_fg_id').is_null())
 #%%
 missing_people_list = joined_df.filter(pl.col('FactGrid').is_null()).unique('person_id')
 print(missing_people_list.height)
-missing_people_list.sample(n = 3)
+if missing_people_list.height >= 3:
+    missing_people_list.sample(n = 3)
 #%% [markdown]
 #To generate quickstatements for creating the persons, go back to [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create).
 #
@@ -486,6 +487,8 @@ not_found_df = not_found_df.join(factgrid_institution_df, how='left', left_on='i
 
 #create label
 not_found_df = not_found_df.with_columns(Lde = pl.col('role') + ' ' + pl.col('institution'))
+
+print(f"{not_found_df.height} institution roles will be created!")
 
 #%% [markdown]
 #This cell generates the translations of the labels. This can take a few minutes.
@@ -611,7 +614,6 @@ def format_datetime(entry: datetime, precision: int):
 
     return ret_val
 
-#only_date=True means there is only one date, not a 'begin date' and an 'end date'
 def date_parsing(date_string: str, date_type: DateType):
     qualifier = ""
     precision = PRECISION_CENTURY
@@ -619,7 +621,8 @@ def date_parsing(date_string: str, date_type: DateType):
     ante_property = (match := re.search(ANTE_GROUP, date_string))
     post_property = (match := re.search(POST_GROUP, date_string))
     assert(not ante_property or not post_property)
-    
+
+    #only_date means there is only one date, not a 'begin date' and an 'end date'    
     match date_type:
         case DateType.ONLY_DATE:
             string_precision_qualifier_clause = NOTE
@@ -927,7 +930,7 @@ def parse_both_dates(d: dict):
 #If the date parsing function can't handle a date (either because that format hasn't been encountered yet or because the entry is nonsense), it prints the problematic date and the corresponding entry from the dataframe. If the relevant rows contain some nonsense data, use this output to find and fix it. If the data is not nonsense, most likely the date_parsing function above needs to be extended. For this, you probably want to contact whoever is responsible for maintaining the sync_notebooks.
 
 #%%
-filepath = os.path.join(output_path, f'quickstatements-offices_{today_string}.qs')
+filepath = os.path.join(output_path, f'quickstatements-offices_{today_string}.v1')
 
 with open(filepath, 'w') as file:
     for row in final_joined_df.iter_rows(named = True):
@@ -958,6 +961,6 @@ with open(filepath, 'w') as file:
 
 #%% [markdown]
 ### 9. Updating FactGrid
-#Once the files have been generated, please open [QuickStatements](https://database.factgrid.de/quickstatements/#/batch) and **run the CSV-commands/V1-commands** (the qs-file contains V1 commands, the csv-files CSV-commands). More details to perform this can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_factgrid_csv.md).
+#Once the files have been generated, please open [QuickStatements](https://database.factgrid.de/quickstatements/#/batch) and **run the CSV-commands/V1-commands**. More details to perform this can be found [here](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_factgrid_csv.md).
 #### Next notebook
 #Once the update is done, you can continue with [notebook 5](fg_to_dpr.ipynb) (fg_to_dpr).
