@@ -243,9 +243,9 @@ output_path = r"C:\Users\Public\sync_notebooks\output_files"
 today_string = datetime.now().strftime('%Y-%m-%d')
 
 if domstift == "":
-    output_file = f"Insert_WIAG_{today_string}_FG.v1"
+    output_file = f"create_persons_FG_{today_string}.v1"
 else:
-    output_file = f"Insert_WIAG-{domstift}_{today_string}_FG.v1"
+    output_file = f"create_persons_FG_{today_string}-{domstift}.v1"
 output_path_file = os.path.join(output_path, output_file)
 
 # %%

@@ -28,7 +28,7 @@ The synchronization process involves several steps, each performed using a speci
 0. **Import DPr-entries into WIAG** (non-notebook action explained [below](#import-dpr-entries-into-wiag-non-notebook-action))
 1. **Update WIAG-IDss in Digitales Personenregister (DPr)** (`dpr_recon.ipynb`)
 2. **Update WIAG-IDs in FactGrid and then add FG-IDs in WIAG** (`fg_wiag_ids.ipynb`)
-3. **Create New Entries on FactGrid from WIAG** (`Csv2FactGrid-create.ipynb`)
+3. **Create new person entries on FactGrid, imported from WIAG** (`fg_import_persons.ipynb`)
 4. **Add Roles, Institutions, Institution Roles and Offices on FactGrid** (`wiag_to_factgrid.ipynb`)
 5. **Add/Update FG-IDs in DPr** (`fg_to_dpr.ipynb`)
 6. **Add/Update GSNs in FactGrid** (`dpr_to_fg.ipynb`)

@@ -401,7 +401,7 @@ print(missing_people_list.height)
 if missing_people_list.height >= 3:
     missing_people_list.sample(n = 3)
 #%% [markdown]
-#To generate quickstatements for creating the persons, go back to [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create).
+#To generate quickstatements for creating the persons, go back to [notebook 3](fg_import_persons.ipynb) (fg_import_persons).
 #
 #The code below removes all the entries for persons that don't exist on FactGrid
 

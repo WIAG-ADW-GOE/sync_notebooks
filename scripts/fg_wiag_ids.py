@@ -224,7 +224,7 @@ outer_df[['wiag_id', 'wiag_fg_id']]
 #%% [markdown]
 ### 8. Find entries to update in WIAG
 #For the following list, the FactGrid-entry is linking to the WIAG-entry, but the WIAG-entry links to no the FG-entry. These entries will be updated automatically to link back. You should **check a sample** and make sure the number of updates is not absurdly high (greater than 500).
-#Should no entries be listed, this means that no update needs to be performed. In this case you should skip the rest of the notebook and go straight to [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create).
+#Should no entries be listed, this means that no update needs to be performed. In this case you should skip the rest of the notebook and go straight to [notebook 3](fg_import_persons.ipynb) (fg_import_persons).
 
 #%%
 #merge dataframes - reusing WIAG-dataframe from step 1
@@ -276,4 +276,4 @@ with open(os.path.join(output_path, f'insert-uext-can_{today_string}.sql'), 'w')
 #### Upload file
 #Now that the file has been generated, you need to upload the file to the WIAG database. As always go to [phpMyAdmin (WIAG)](https://vwebfile.gwdg.de/phpmyadmin/), then first select the database (wiagvokabulare) and then either go to the `Import` tab and choose the file to run or paste the contents of the SQL-file into the textfield (more details here [Run_SQL_Query_and_Export_CSV.md](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Run_SQL_Query_and_Export_CSV.md)).
 #### Next notebook
-#Once the update is done, you can continue with [notebook 3](Csv2FactGrid-create.ipynb) (Csv2FactGrid-create).
+#Once the update is done, you can continue with [notebook 3](fg_import_persons.ipynb) (fg_import_persons).
