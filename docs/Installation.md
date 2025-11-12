@@ -1,167 +1,50 @@
-# Jupyter Notebook Installation
+# Installation
 
-This document provides a step-by-step guide to installing and setting up Jupyter Notebook on a Windows system. It includes detailed instructions for installing necessary software, including Julia and Python, configuring system environment variables, installing essential libraries for both Python and Julia, and creating a convenient shortcut for launching Jupyter Notebook. Troubleshooting steps and links to official documentation are also provided for a seamless experience.
+## 1. Downloading the repository
 
-## 1. Outline
+Start by, if you haven't already, downloading the repository. You can do this either with git (e.g. `git clone https://github.com/WIAG-ADW-GOE/sync_notebooks.git C:\Users\Public\sync_notebooks`) or by downloading the content as a .zip file ([direct link](https://github.com/WIAG-ADW-GOE/sync_notebooks/archive/refs/heads/main.zip)), extracting the contents and moving the directory to where you want (the recommended location is `C:\Users\Public\sync_notebooks`, because then you won't have to adjust the paths in the notebooks).
 
-1. [Credentials and Notes](#2-credentials-and-notes): Provides essential information about administrator credentials required for installations and the limitations of Julia library sharing across users.
-2. [Julia Installation](#3-julia-installation): Step-by-step guide to downloading, installing, and configuring Julia, including adding it to the system PATH.
-3. [Python Installation](#4-python-installation): Detailed instructions for installing Python and ensuring compatibility through system configurations.
-4. [Restart](#5-restart)
-5. [Python Libraries Installation](#6-python-libraries-installation): Guides you through installing required Python libraries using pip.
-6. [Julia Libraries Installation](#7-julia-libraries-installation): Provides commands to install necessary Julia libraries for Jupyter Notebook.
-7. [Jupyter Notebook Shortcut Creation](#8-jupyter-notebook-shortcut-creation): Instructions for creating a shortcut to launch Jupyter Notebook conveniently and an advanced alternative using `jupyter-lab`.
-8. [Troubleshooting](#9-troubleshooting): Covers potential issues during installation and usage with solutions.
-9. [References](#10-references): Links to official documentation for Julia, Python, and Jupyter Notebook for further troubleshooting.
+## 2. App for using Jupyter Notebooks
+There are several options for using Jupyter notebooks:
+- use [VSCodium](https://vscodium.com/) (or [VSCode](https://code.visualstudio.com/)) to run the notebooks. This is probably the most user-friendly option.
+- use an online service like [the one by the GWDG](https://academiccloud.de/services/jupyter/) to run the notebooks. This way you don't need to install anything on your own device, but installing packages might be more of a hassle.
+- use the official [Jupyter Lab](https://jupyter.org/)
+- etc.
 
-## 2. Credentials and Notes
+With VSCodium you need to use the "Open Folder" option and select `C:\Users\Public\sync_notebooks`. Then you can open and run a notebook by selecting it in the sidebar (first follow the rest of the guide though to make sure Python and all the packages are installed).
 
-- **Administrator Credentials**: You need local administrator credentials to install software for all users.
-- **Julia Libraries Limitation**: Julia does not allow easy sharing of libraries across users by default, which means libraries need to be installed individually for each user.
+## 3. Installation of Python and required packages
 
-## 3. Julia Installation
+If you use an online service, Python will already be installed, and uv probably won't (and you probably won't be able to install it), so you should skip to [Installing packages with pip](#installing-packages-with-pip)
 
-1. Download the installer from [Julia Downloads](https://julialang.org/downloads/). As the time of writing this document, I would recommend Julia 1.10.4. Please [download it here](https://julialang-s3.julialang.org/bin/winnt/x64/1.10/julia-1.10.4-win64.exe).
+### Using uv (recommended)
 
-2. Run the `.exe` file as Administrator (“Als Administrator ausführen”).
+If you don't have uv installed yet, check out [the guide here](https://docs.astral.sh/uv/getting-started/installation/), or if you just want to install uv for yourself without any special requirements:
+1. open a Powershell
+2. run `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
 
-3. Change the installation directory to:
+If you already have uv installed, all you need to do is run `uv sync` in the project directory, i.e.:
 
-   ```
-   C:\Program Files\JuliaXXXX
-   ```
+1. open a Powershell
+2. run `cd C:\Users\Public\sync_notebooks`
+3. run `uv sync`
 
-   Replace `XXXX` with the version number (e.g., `1.10.4`, if used the example julia version above).
+This will install both Python, if it's not installed yet, and the necessary packages.
 
-4. Check the box for **“Add Julia to PATH”** and proceed with the installation. You can then simply click on `Finish`.
+### Without uv
+ 
+If you don't want to install uv, you can also install packages with, e.g., pip.
 
-5. Update the PATH environment variable:
+#### Python
 
-   - Search for `Systemumgebungsvariablen bearbeiten` and open it.
-   - Click **“Umgebungsvariablen…”**.
-   - Under `Benutzervariablen für…`, double-click on the `PATH` variable.
-   - Copy the Julia-related entry from the list of entries. This entry will have julia written in it.
-   - Under `Systemvariabeln`, double-clickthe `PATH` variable.
-   - Add the copied string as a new entry here.
-   - Save changes by clicking **OK** in all windows.
+Before installing packages you need to make sure that you have Python (>3.13) installed. You can download it [here](https://www.python.org/downloads/).
 
-6. **Verify Installation (Optional)**:  
-   - Open Command Prompt (for eg: powershell)
-   - Without changing the path, run the following command:
+#### Installing packages with pip
 
-      ```bash
-      julia --version
-      ```
+Its recommended (but not necessary) to create a virtual environment for the repository. If you don't want to do that, just skip steps 3 and 4.
 
-   If Julia is installed correctly, it will display the version number.
-
-7. **Common Issues and Fixes**:
-   - **Issue**: Julia is not recognized in the command line.  
-     **Solution**: Ensure that the PATH variable was updated and saved correctly. Restart your computer if necessary.
-
-## 4. Python Installation
-
-1. Download the installer from [Python Downloads](https://www.python.org/downloads/).  
-   Example version used: [Python 3.12.4](https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe).
-
-2. Run the `.exe` file as Administrator (“Als Administrator ausführen”).
-
-3. During installation:
-
-   - Check the boxes for **Admin privileges** and **Add python.exe to PATH**.
-   - Choose **Custom Install** and uncheck the boxes:
-     - `tcl/tk`
-     - `Python test suite`
-   - Check **Install Python 3.12 for all users** and **Precompile Standard Library**.
-
-4. Select **Disable path length limit** and then complete the installation.
-
-## 5. Restart
-
-Restart your computer to apply all changes from the Julia and Python installations.
-
-## 6. Python Libraries Installation
-
-*Note: please open this document again to copy the commands easier.*
-
-1. Open the Command Prompt as Administrator.
-   - To do this, search for "Eingabeaufforderung" on the Windows search bar.
-   - Right click on it. This will show you an option called “Als Administrator ausführen” which will allow you to open Command Prompt as Administrator.
-2. Run the following commands to install required libraries:
-   ```bash
-   py -m pip install notebook pandas asyncio aiohttp tqdm
-   ```
-   Do this by copying this line and pasting it in the command prompt and then pressing enter. Please wait until the installation is completed.
-
-## 7. Julia Libraries Installation
-
-1. Open the Command Prompt but this time not as Administrator. The last prompt was opened as Administrator.
-2. Run Julia by typing:
-   ```bash
-   julia
-   ```
-3. Enter Julia's package manager by typing `]`. You will see a prompt similar:
-   ```
-   ... pkg>
-   ```
-4. Install libraries by running:
-   ```julia
-   add CSV DataFrames Dates
-   ```
-5. **Common Issues and Fixes**:
-   - **Issue**: Network errors during installation.  
-     **Solution**: Ensure you have a stable internet connection and retry the installation.
-
-## 8. Jupyter Notebook Shortcut Creation
-
-1. Create a new shortcut (`Verknüpfung`). To do this, right-click on an empty space on the desktop. Then click on `Neu` and then `Verknüpfung`.
-2. Use the following as the shortcut path:
-   ```
-   cmd /k cd C:\ && py -m jupyter notebook
-   ```
-
-   *Note: In case have problems by copy-pasting the line above. Please delete the hyphen and type it again on your keyboard. Some browsers may use a different unicode for the hypen and cause this issue.*
-3. Rename the shortcut to **“Jupyter Notebook”**.
-4. Right click on the created shortcut. Then click on "An start anheften". This would link the shortcut to the start menu so that you can search for it more easily.
-5. You can double click on the short cut to see if it works.
-
-You can now navigate go the jupyter files on your computer and run them.
-
-#### Advanced Alternative (Optional):
-
-To use Jupyter Lab (an enhanced version of Jupyter Notebook), open the command prompt and run:
-
-```bash
-jupyter lab
-```
-
-## 9. Troubleshooting
-
-### Common Issues:
-
-1. **Julia or Python Not Recognized**:
-
-   - Verify that PATH variables are correctly configured.
-   - Restart your computer if changes do not take effect.
-
-2. **Library Installation Errors**:
-
-   - Ensure a stable internet connection.
-   - Use `py -m pip install --upgrade pip` if dependencies fail during Python library installation.
-
-3. **Jupyter Notebook Does Not Launch**:
-
-   - Verify installations by running `py -m jupyter notebook` in the command prompt.
-
-4. **Kernel Issues in Jupyter Notebook**:
-   - Run:
-     ```bash
-     pip install --upgrade notebook
-     ```
-   - Restart the notebook server.
-
-## 10. References
-
-- [Julia Official Documentation](https://docs.julialang.org/)
-- [Python Official Documentation](https://docs.python.org/)
-- [Jupyter Notebook Documentation](https://jupyter.org/documentation)
+1. open a Powershell
+2. to move into the project directory run: `cd C:\Users\Public\sync_notebooks`
+3. to create the virtual environment, run: `python -m venv .venv`
+4. to activate it, run: `.venv\Scripts\activate`
+5. now to install the packages, run: `pip install requests pandas polars dotenv datetime openai aiohttp ipykernel`
