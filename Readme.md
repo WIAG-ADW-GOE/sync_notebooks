@@ -10,7 +10,7 @@ This guide is intended for team members at Germania Sacra who are domain experts
 
 ## Requirements
 
-To use the notebooks, first some software (Python and Julia) needs to be installed. For this, refer to the [Software Installation](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Installation.md) guide. Also required is **database access** to all three databases. To obtain the necessary credentials please contact Barbara Kroeger at Germania Sacra.
+To use the notebooks, Python and some Python packages are required. Refer to the [installation guide](https://github.com/WIAG-ADW-GOE/sync_notebooks/blob/main/docs/Installation.md) for further details. Also required to run the notebooks is **database access** to all three databases. To obtain the necessary credentials please contact Barbara Kroeger at Germania Sacra.
 
 ## General notes
 Ignoring instructions could lead to data inconsistencies, which might be difficult to fix. Make sure to follow instructions in the notebooks (like checking outputs manually) to avoid this. Also for the same reason don't rush through notebooks. Unless you know the notebook extremely well, always execute cells one at a time to monitor progress and catch any errors early.
