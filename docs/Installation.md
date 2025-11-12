@@ -22,6 +22,7 @@ If you use an online service, Python will already be installed, and uv probably 
 If you don't have uv installed yet, check out [the guide here](https://docs.astral.sh/uv/getting-started/installation/), or if you just want to install uv for yourself without any special requirements:
 1. open a Powershell
 2. run `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+3. close the Powershell and open a new one (so you can then use uv)
 
 If you already have uv installed, all you need to do is run `uv sync` in the project directory, i.e.:
 
