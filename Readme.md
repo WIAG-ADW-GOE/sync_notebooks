@@ -1,4 +1,4 @@
-# Synchronizing Data Between Digitales Personenregister (DPr), WIAG, and FactGrid Using Jupyter Notebooks
+# Synchronizing Data between Digitales Personenregister (DPr), WIAG, and FactGrid using Jupyter Notebooks
 
 The Jupyter Notebooks contained in this repository are designed to synchronize data between three databases:
 
@@ -46,4 +46,5 @@ One step of the workflow that is not part of the notebooks, because it was devel
 2. Navigate to **Edit > Domherren aus dem Digitalen Personenregister**.
 3. Scroll to the bottom of the page and click the **Start** button to import entries from DPr.
 4. Newly imported entries will receive a higher WIAG ID, distinguishing them from native WIAG entries.
+
 5. These entries require manual review. After verification, they will be assigned a lower WIAG ID.
