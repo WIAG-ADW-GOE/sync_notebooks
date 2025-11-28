@@ -853,6 +853,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b4/9a/24e4b890c7ee4358964aa92c4d1865df0e8831f7df6abaa3a39914521724/polars-1.35.2-py3-none-any.whl", hash = "sha256:5e8057c8289ac148c793478323b726faea933d9776bd6b8a554b0ab7c03db87e", size = 783597, upload-time = "2025-11-09T13:18:51.361Z" },
 ]
 
+[package.optional-dependencies]
+rtcompat = [
+    { name = "polars-runtime-compat" },
+]
+
 [[package]]
 name = "polars-runtime-32"
 version = "1.35.2"
@@ -865,6 +870,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/67/89/e09d9897a70b607e22a36c9eae85a5b829581108fd1e3d4292e5c0f52939/polars_runtime_32-1.35.2-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:3b9006902fc51b768ff747c0f74bd4ce04005ee8aeb290ce9c07ce1cbe1b58a9", size = 37850590, upload-time = "2025-11-09T13:19:08.154Z" },
     { url = "https://files.pythonhosted.org/packages/dc/40/96a808ca5cc8707894e196315227f04a0c82136b7fb25570bc51ea33b88d/polars_runtime_32-1.35.2-cp39-abi3-win_amd64.whl", hash = "sha256:ddc015fac39735592e2e7c834c02193ba4d257bb4c8c7478b9ebe440b0756b84", size = 41290019, upload-time = "2025-11-09T13:19:12.214Z" },
     { url = "https://files.pythonhosted.org/packages/f4/d1/8d1b28d007da43c750367c8bf5cb0f22758c16b1104b2b73b9acadb2d17a/polars_runtime_32-1.35.2-cp39-abi3-win_arm64.whl", hash = "sha256:6861145aa321a44eda7cc6694fb7751cb7aa0f21026df51b5faa52e64f9dc39b", size = 36955684, upload-time = "2025-11-09T13:19:15.666Z" },
+]
+
+[[package]]
+name = "polars-runtime-compat"
+version = "1.35.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/b5/dc985a1cdf9024c102a29de5d8040957e4f8de77f9f3934a66895291cda4/polars_runtime_compat-1.35.2.tar.gz", hash = "sha256:1947c6ecfe0b42bb85ff1519eb2d62abb2247d52b8ce52156fff0595b4a82d8a", size = 2695233, upload-time = "2025-11-09T13:20:10.981Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f0/4c/d0adae24b71b077cb1c899ee39e213a9ab8c70ad4d4167dad916794540ef/polars_runtime_compat-1.35.2-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:99ff98702458da27d2be28f55e41e1ad8f3fe1fdc783dbf24875fb6d031d353f", size = 40268948, upload-time = "2025-11-09T13:19:44.185Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/b2/7a32eaa30d42a877edeb498f34bb355b2861c623cbcfb29172462b170499/polars_runtime_compat-1.35.2-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:2dfe58e088568b04ecc002b595c28ad82cb4d1bec9e3f410ecbe839680348a34", size = 36700559, upload-time = "2025-11-09T13:19:48.195Z" },
+    { url = "https://files.pythonhosted.org/packages/54/fc/9da9f6783ac878234f3e77657d75e898972c0b35f3e6bda1ee86d6f06d1f/polars_runtime_compat-1.35.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:da3fae76c214c72e805f2084305b9df5b34c4e82d92968b9e574a5cba4ac0836", size = 41092964, upload-time = "2025-11-09T13:19:52.054Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/65/9d0a7287551805d26f0b1738da8bd72f04f6bc01ff56863dd04febffd1fa/polars_runtime_compat-1.35.2-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:46d24653c6fec8179ca6ddfb1e588f5ae590f46db61d97479f6fc635cfc40a59", size = 37849284, upload-time = "2025-11-09T13:19:55.955Z" },
+    { url = "https://files.pythonhosted.org/packages/89/7d/cca89fc674b7d69a072e9765c4b3fe3af08b44be437c353b8a3682a1a478/polars_runtime_compat-1.35.2-cp39-abi3-win_amd64.whl", hash = "sha256:0180441deda8f6b5e16b49c92db2079d300f24c2aab421170e2c9b06deac79c3", size = 41036485, upload-time = "2025-11-09T13:19:59.496Z" },
+    { url = "https://files.pythonhosted.org/packages/49/2e/51bfbf601d26415371dad10c2757eef63ad2cc7f8244bcfad0a506128294/polars_runtime_compat-1.35.2-cp39-abi3-win_arm64.whl", hash = "sha256:b13d70d1fe0f41ebd56f22c25a9cc34a91fd4cf7f25e58ed4bdd39d7e4f91a5b", size = 36956121, upload-time = "2025-11-09T13:20:03.435Z" },
 ]
 
 [[package]]
@@ -1209,7 +1228,7 @@ dependencies = [
     { name = "ipykernel" },
     { name = "openai" },
     { name = "pandas" },
-    { name = "polars" },
+    { name = "polars", extra = ["rtcompat"] },
     { name = "requests" },
 ]
 
@@ -1221,7 +1240,7 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "openai", specifier = ">=2.7.2" },
     { name = "pandas", specifier = ">=2.3.3" },
-    { name = "polars", specifier = ">=1.35.2" },
+    { name = "polars", extras = ["rtcompat"], specifier = ">=1.35.2" },
     { name = "requests", specifier = ">=2.32.5" },
 ]
 
